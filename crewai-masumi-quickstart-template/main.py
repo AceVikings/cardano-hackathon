@@ -4,6 +4,7 @@ import uuid
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field, field_validator
+from typing import Dict
 from masumi.config import Config
 from masumi.payment import Payment, Amount
 from crew_definition import ResearchCrew
@@ -50,7 +51,7 @@ config = Config(
 # ─────────────────────────────────────────────────────────────────────────────
 class StartJobRequest(BaseModel):
     identifier_from_purchaser: str
-    input_data: dict[str, str]
+    input_data: Dict[str, str]
     
     class Config:
         json_schema_extra = {
@@ -308,7 +309,7 @@ def main():
     print("=" * 70 + "\n")
     
     # Define test input
-    input_data = {"text": "The impact of AI on the job market"}
+    input_data = {"text": "Swap amount: 1000  baseToken: ADA to targetToken:  MIN for using minswap DEX on Cardano"}
     
     print(f"Input: {input_data['text']}")
     print("\nProcessing with CrewAI agents...\n")
