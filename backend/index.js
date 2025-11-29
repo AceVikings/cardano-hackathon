@@ -7,6 +7,7 @@ require("dotenv").config();
 // Routes
 const authRoutes = require("./routes/auth");
 const walletRoutes = require("./routes/wallet");
+const workflowRoutes = require("./routes/workflows");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -41,6 +42,7 @@ mongoose
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/workflows", workflowRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

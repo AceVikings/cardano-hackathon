@@ -160,4 +160,158 @@ export async function getAvailableAgents(): Promise<AvailableAgent[]> {
   return response.agents;
 }
 
+// ============================================================================
+// Workflow API
+// ============================================================================
+
+export interface WorkflowNode {
+  id: string;
+  type: 'trigger' | 'agent';
+  position: { x: number; y: number };
+  data: {
+    label: string;
+    triggerType?: string;
+    triggerConfig?: Record<string, unknown>;
+    agentType?: string;
+    status?: 'active' | 'inactive' | 'configuring';
+    description?: string;
+    inputParameters?: Array<{ name: string; type: string; description: string; value?: unknown }>;
+    output?: { name: string; type: string; description: string };
+  };
+}
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  sourceHandle?: string;
+  target: string;
+  targetHandle?: string;
+  type?: string;
+  animated?: boolean;
+}
+
+export interface WorkflowViewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export interface WorkflowStats {
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  lastExecutedAt?: string;
+}
+
+export interface WorkflowBasicInfo {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'inactive';
+  nodeCount: number;
+  edgeCount: number;
+  stats: WorkflowStats;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkflowFull extends Omit<WorkflowBasicInfo, 'nodeCount' | 'edgeCount'> {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  viewport: WorkflowViewport;
+}
+
+export interface CreateWorkflowData {
+  name: string;
+  description?: string;
+  status?: 'active' | 'inactive';
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  viewport?: WorkflowViewport;
+}
+
+export interface UpdateWorkflowData {
+  name?: string;
+  description?: string;
+  status?: 'active' | 'inactive';
+  nodes?: WorkflowNode[];
+  edges?: WorkflowEdge[];
+  viewport?: WorkflowViewport;
+}
+
+/**
+ * Get all workflows for current user (basic info only)
+ */
+export async function getWorkflows(status?: 'active' | 'inactive'): Promise<WorkflowBasicInfo[]> {
+  const queryParam = status ? `?status=${status}` : '';
+  const response = await apiRequest<{ success: boolean; workflows: WorkflowBasicInfo[]; count: number }>(
+    `/workflows${queryParam}`
+  );
+  return response.workflows;
+}
+
+/**
+ * Get single workflow by ID (full data)
+ */
+export async function getWorkflowById(id: string): Promise<WorkflowFull> {
+  const response = await apiRequest<{ success: boolean; workflow: WorkflowFull }>(
+    `/workflows/${id}`
+  );
+  return response.workflow;
+}
+
+/**
+ * Create new workflow
+ */
+export async function createWorkflow(data: CreateWorkflowData): Promise<WorkflowFull> {
+  const response = await apiRequest<{ success: boolean; workflow: WorkflowFull }>(
+    '/workflows',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
+  return response.workflow;
+}
+
+/**
+ * Update workflow
+ */
+export async function updateWorkflow(id: string, data: UpdateWorkflowData): Promise<WorkflowFull> {
+  const response = await apiRequest<{ success: boolean; workflow: WorkflowFull }>(
+    `/workflows/${id}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }
+  );
+  return response.workflow;
+}
+
+/**
+ * Toggle workflow status
+ */
+export async function updateWorkflowStatus(id: string, status: 'active' | 'inactive'): Promise<WorkflowBasicInfo> {
+  const response = await apiRequest<{ success: boolean; workflow: WorkflowBasicInfo }>(
+    `/workflows/${id}/status`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }
+  );
+  return response.workflow;
+}
+
+/**
+ * Delete workflow
+ */
+export async function deleteWorkflow(id: string): Promise<void> {
+  await apiRequest<{ success: boolean; message: string }>(
+    `/workflows/${id}`,
+    {
+      method: 'DELETE',
+    }
+  );
+}
+
 export { apiRequest };
