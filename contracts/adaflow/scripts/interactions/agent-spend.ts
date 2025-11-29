@@ -1,13 +1,11 @@
 /**
  * AdaFlow - Agent Spend Script
- * Agent spends funds from the custodial wallet within authorized limits
+ * Agent spends funds from the custodial wallet (no limits)
  */
 
 import 'dotenv/config';
 import {
   MeshTxBuilder,
-  resolveScriptHash,
-  serializePlutusScript,
 } from '@meshsdk/core';
 import {
   getUserWallet,
@@ -24,7 +22,6 @@ import {
   WalletRedeemerType,
   adaToLovelace,
   lovelaceToAda,
-  stringToHex,
 } from '../types.js';
 import { getCustodialWalletScript } from '../blueprint.js';
 
@@ -64,64 +61,23 @@ async function main() {
 
   console.log(`   Found ${scriptUtxos.length} UTXO(s)`);
 
-  // Find UTXO that belongs to this user (by checking datum)
-  let targetUtxo = null;
-  let currentDatum: WalletDatum | null = null;
-
-  for (const utxo of scriptUtxos) {
-    // In a real implementation, we'd parse the datum
-    // For now, we'll use the first UTXO (assuming it's ours)
-    targetUtxo = utxo;
-    break;
-  }
-
-  if (!targetUtxo) {
-    console.error('❌ No matching UTXO found for this user');
-    process.exit(1);
-  }
-
+  // Use the first UTXO
+  const targetUtxo = scriptUtxos[0];
   const inputLovelace = BigInt(
     targetUtxo.output.amount.find((a: any) => a.unit === 'lovelace')?.quantity ?? 0
   );
+
   console.log(`   Target UTXO: ${targetUtxo.input.txHash}#${targetUtxo.input.outputIndex}`);
   console.log(`   Current Balance: ${lovelaceToAda(inputLovelace)} ADA`);
 
   // Check if spend amount is valid
   if (spendAmountLovelace > inputLovelace - 2_000_000n) {
-    console.error('❌ Spend amount exceeds available balance (keeping 2 ADA reserve)');
+    console.error('❌ Spend amount exceeds available balance (keeping 2 ADA for min UTXO)');
     process.exit(1);
   }
 
-  // Create current datum (this would normally be parsed from chain)
-  // We'll reconstruct it based on expected state
-  const inputDatum: WalletDatum = {
-    owner: userPkh,
-    approvedAgents: [agentPkh],
-    maxAdaPerTx: adaToLovelace(10),
-    maxTotalAda: adaToLovelace(100),
-    totalSpent: 0n, // Assuming this is the first spend
-    strategy: {
-      strategyType: { type: 0 }, // Manual
-      minReserve: 2_000_000n,
-      autoCompound: false,
-      maxSlippageBps: 100n,
-    },
-    nonce: 0n,
-  };
-
-  // Create updated datum with new total_spent
-  const outputDatum: WalletDatum = {
-    ...inputDatum,
-    totalSpent: inputDatum.totalSpent + spendAmountLovelace,
-  };
-
-  // Calculate output value
-  const outputLovelace = inputLovelace - spendAmountLovelace;
-
   console.log(`\n📋 Transaction Details:`);
   console.log(`   Spending: ${spendAmountAda} ADA`);
-  console.log(`   Remaining: ${lovelaceToAda(outputLovelace)} ADA`);
-  console.log(`   New Total Spent: ${lovelaceToAda(outputDatum.totalSpent)} ADA`);
 
   // Get agent address for receiving the spent funds
   const agentAddresses = await agentWallet.getUsedAddresses();
@@ -140,13 +96,9 @@ async function main() {
     process.exit(1);
   }
 
-  // Create redeemer
+  // Create redeemer - simple AgentSpend with no parameters
   const redeemer = walletRedeemerToData({
     type: WalletRedeemerType.AgentSpend,
-    details: {
-      amount: spendAmountLovelace,
-      purpose: stringToHex('DeFi yield farming'),
-    },
   });
 
   // Build transaction
@@ -167,11 +119,6 @@ async function main() {
     .txInInlineDatumPresent()
     .txInRedeemerValue(redeemer)
     .txInScript(scriptCode)
-    // Continuation output (back to script with updated datum)
-    .txOut(scriptAddress, [
-      { unit: 'lovelace', quantity: outputLovelace.toString() }
-    ])
-    .txOutInlineDatumValue(walletDatumToData(outputDatum))
     // Send spent amount to agent
     .txOut(agentAddress, [
       { unit: 'lovelace', quantity: spendAmountLovelace.toString() }

@@ -44,14 +44,6 @@ export const getCustodialWalletValidator = (): Validator => {
   return validator;
 };
 
-export const getAuthorizationNftValidator = (): Validator => {
-  const validator = blueprint.validators.find(
-    (v: Validator) => v.title === 'authorization_nft.authorization_nft.mint'
-  );
-  if (!validator) throw new Error('Authorization NFT validator not found');
-  return validator;
-};
-
 // Helper to get script hash (address) for the custodial wallet
 export const getCustodialWalletScriptHash = (): string => {
   return getCustodialWalletValidator().hash;
@@ -60,10 +52,6 @@ export const getCustodialWalletScriptHash = (): string => {
 // Helper to get the compiled CBOR code
 export const getCustodialWalletScript = (): string => {
   return getCustodialWalletValidator().compiledCode;
-};
-
-export const getAuthorizationNftScript = (): string => {
-  return getAuthorizationNftValidator().compiledCode;
 };
 
 console.log('📜 Blueprint loaded successfully');

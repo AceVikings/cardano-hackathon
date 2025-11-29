@@ -6,7 +6,6 @@
 import 'dotenv/config';
 import {
   MeshTxBuilder,
-  deserializeAddress,
 } from '@meshsdk/core';
 import {
   getUserWallet,
@@ -48,12 +47,20 @@ async function main() {
   console.log(`📜 Script Address: ${scriptAddress}\n`);
 
   // Check user balance
-  const userUtxos = await userWallet.getUtxos();
+  let userUtxos = await userWallet.getUtxos();
+  
+  // Retry if UTXOs empty (wallet may need time to sync)
+  if (userUtxos.length === 0) {
+    console.log('⏳ Waiting for wallet to sync...');
+    await new Promise(r => setTimeout(r, 3000));
+    userUtxos = await userWallet.getUtxos();
+  }
+  
   const userBalance = userUtxos.reduce((sum, utxo) => {
     const lovelace = utxo.output.amount.find(a => a.unit === 'lovelace');
     return sum + BigInt(lovelace?.quantity ?? 0);
   }, 0n);
-  console.log(`💳 User Balance: ${lovelaceToAda(userBalance)} ADA`);
+  console.log(`💳 User Balance: ${lovelaceToAda(userBalance)} ADA (${userUtxos.length} UTXOs)`);
 
   if (userBalance < depositAmountLovelace + 2_000_000n) {
     console.error('❌ Insufficient funds for deposit + fees');
@@ -61,21 +68,12 @@ async function main() {
   }
 
   // Create initial datum with agent authorization
-  // Setting generous limits: 10 ADA per tx, 100 ADA total
-  const datum: WalletDatum = createInitialDatum(
-    userPkh,
-    agentPkh,
-    10, // max 10 ADA per transaction
-    100 // max 100 ADA total spending by agent
-  );
+  const datum: WalletDatum = createInitialDatum(userPkh, agentPkh);
 
   console.log('\n📋 Wallet Configuration:');
   console.log(`   Owner: ${datum.owner}`);
   console.log(`   Approved Agents: ${datum.approvedAgents.length}`);
-  console.log(`   Max per TX: ${lovelaceToAda(datum.maxAdaPerTx)} ADA`);
-  console.log(`   Max Total: ${lovelaceToAda(datum.maxTotalAda)} ADA`);
-  console.log(`   Strategy: Manual`);
-  console.log(`   Min Reserve: ${lovelaceToAda(datum.strategy.minReserve)} ADA\n`);
+  console.log(`   Agent can spend: UNLIMITED\n`);
 
   // Get user address for change
   const userAddresses = await userWallet.getUsedAddresses();

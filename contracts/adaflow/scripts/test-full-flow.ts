@@ -24,7 +24,6 @@ import {
   createInitialDatum,
   adaToLovelace,
   lovelaceToAda,
-  stringToHex,
 } from './types.js';
 import { getCustodialWalletScript } from './blueprint.js';
 
@@ -47,10 +46,12 @@ async function testDeposit(
   const userAddresses = await userWallet.getUsedAddresses();
   const userAddress = userAddresses[0] || (await userWallet.getUnusedAddresses())[0];
 
-  // Create initial datum
-  const datum: WalletDatum = createInitialDatum(userPkh, agentPkh, 10, 100);
+  // Create initial datum - simple with just owner and agent
+  const datum: WalletDatum = createInitialDatum(userPkh, agentPkh);
   
   console.log(`   Depositing ${depositAmountAda} ADA to custodial wallet...`);
+  console.log(`   Owner: ${userPkh}`);
+  console.log(`   Approved Agent: ${agentPkh}`);
   
   const txBuilder = new MeshTxBuilder({
     fetcher: blockfrostProvider,
@@ -80,8 +81,7 @@ async function testAgentSpend(
   userPkh: string,
   agentPkh: string,
   scriptAddress: string,
-  spendAmountAda: number,
-  currentTotalSpent: bigint
+  spendAmountAda: number
 ): Promise<string> {
   console.log('\n🤖 STEP 2: AGENT SPEND');
   console.log('======================');
@@ -103,30 +103,6 @@ async function testAgentSpend(
   console.log(`   Script UTXO balance: ${lovelaceToAda(inputLovelace)} ADA`);
   console.log(`   Agent spending: ${spendAmountAda} ADA`);
   
-  // Create input datum (reconstructed)
-  const inputDatum: WalletDatum = {
-    owner: userPkh,
-    approvedAgents: [agentPkh],
-    maxAdaPerTx: adaToLovelace(10),
-    maxTotalAda: adaToLovelace(100),
-    totalSpent: currentTotalSpent,
-    strategy: {
-      strategyType: { type: 0 },
-      minReserve: 2_000_000n,
-      autoCompound: false,
-      maxSlippageBps: 100n,
-    },
-    nonce: 0n,
-  };
-
-  // Create output datum with updated total_spent
-  const outputDatum: WalletDatum = {
-    ...inputDatum,
-    totalSpent: inputDatum.totalSpent + spendAmountLovelace,
-  };
-
-  const outputLovelace = inputLovelace - spendAmountLovelace;
-  
   // Get agent info
   const agentAddresses = await agentWallet.getUsedAddresses();
   const agentAddress = agentAddresses[0] || (await agentWallet.getUnusedAddresses())[0];
@@ -141,12 +117,9 @@ async function testAgentSpend(
     throw new Error('No collateral UTXO found');
   }
 
+  // Simple redeemer with no parameters
   const redeemer = walletRedeemerToData({
     type: WalletRedeemerType.AgentSpend,
-    details: {
-      amount: spendAmountLovelace,
-      purpose: stringToHex('DeFi operation'),
-    },
   });
 
   const txBuilder = new MeshTxBuilder({
@@ -160,10 +133,7 @@ async function testAgentSpend(
     .txInInlineDatumPresent()
     .txInRedeemerValue(redeemer)
     .txInScript(scriptCode)
-    .txOut(scriptAddress, [
-      { unit: 'lovelace', quantity: outputLovelace.toString() }
-    ])
-    .txOutInlineDatumValue(walletDatumToData(outputDatum))
+    // Send spent amount to agent (takes entire UTXO in simplified version)
     .txOut(agentAddress, [
       { unit: 'lovelace', quantity: spendAmountLovelace.toString() }
     ])
@@ -265,7 +235,7 @@ async function testWithdraw(
 async function main() {
   console.log('🧪 AdaFlow - Full Test Suite');
   console.log('============================');
-  console.log('Testing: Deposit → Agent Spend → Withdraw\n');
+  console.log('Testing: Deposit → Agent Spend → (Optional Withdraw)\n');
 
   // Setup
   const userWallet = await getUserWallet();
@@ -284,7 +254,7 @@ async function main() {
 
   // Test parameters
   const depositAmount = 10; // ADA
-  const spendAmount = 2;    // ADA
+  const spendAmount = 10;   // ADA (agent takes all in this simplified test)
 
   try {
     // Step 1: Deposit
@@ -295,17 +265,9 @@ async function main() {
     console.log('\n⏳ Waiting 10s before agent spend...');
     await delay(10000);
     
-    // Step 2: Agent Spend
+    // Step 2: Agent Spend (takes entire amount)
     const spendTx = await testAgentSpend(
-      agentWallet, userPkh, agentPkh, scriptAddress, spendAmount, 0n
-    );
-    
-    console.log('\n⏳ Waiting 10s before withdraw...');
-    await delay(10000);
-    
-    // Step 3: Withdraw
-    const withdrawTx = await testWithdraw(
-      userWallet, userPkh, scriptAddress
+      agentWallet, userPkh, agentPkh, scriptAddress, spendAmount
     );
 
     // Final summary
@@ -313,11 +275,9 @@ async function main() {
     console.log('================');
     console.log(`✅ Deposit TX:     ${depositTx}`);
     console.log(`✅ Agent Spend TX: ${spendTx}`);
-    console.log(`✅ Withdraw TX:    ${withdrawTx}`);
     console.log('\n🔗 View on CardanoScan:');
     console.log(`   Deposit: https://preprod.cardanoscan.io/transaction/${depositTx}`);
     console.log(`   Spend:   https://preprod.cardanoscan.io/transaction/${spendTx}`);
-    console.log(`   Withdraw:https://preprod.cardanoscan.io/transaction/${withdrawTx}`);
 
   } catch (error) {
     console.error('\n❌ Test failed:', error);
