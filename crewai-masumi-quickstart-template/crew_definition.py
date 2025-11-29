@@ -1,6 +1,6 @@
 from crewai import Agent, Crew, Task
 from logging_config import get_logger
-from tools import GetSwapQuoteTool, GetPoolAddressTool, CalculateMinOutputTool
+from tools import GetSwapQuoteTool, GetPoolAddressTool, CalculateMinOutputTool, MinswapSwapTool
 
 class ResearchCrew:
     def __init__(self, verbose=True, logger=None):
@@ -31,7 +31,7 @@ class ResearchCrew:
             goal='Generate the transaction for swapping tokens on the Cardano chain using a specific DEX. Identify the Base token, target token and amounts from the text input',
             backstory='Expert in Cardano blockchain transactions, DEX integrations, and swap operations',
             verbose=self.verbose,
-            tools=[GetSwapQuoteTool(), GetPoolAddressTool(), CalculateMinOutputTool()]
+            tools=[ MinswapSwapTool()]
         )
 
         self.logger.info("Created research, writer, and converter agents")

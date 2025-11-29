@@ -9,14 +9,16 @@ const authRoutes = require("./routes/auth");
 const walletRoutes = require("./routes/wallet");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // CORS middleware
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
 
 // Body parser
 app.use(express.json());
@@ -32,7 +34,7 @@ if (process.env.NODE_ENV !== "production") {
 
 // MongoDB Connection
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI || "mongodb://root:example@localhost:27017/")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
@@ -43,6 +45,40 @@ app.use("/api/wallet", walletRoutes);
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Available agents endpoint
+app.get("/api/available-agents", (req, res) => {
+  const agents = [
+    {
+      name: "Swap Token Agent",
+      description:
+        "Agent for generating token swap transactions on Cardano using Minswap DEX",
+      inputParameters: [
+        {
+          name: "fromToken",
+          type: "string",
+          description: "The token to swap from (e.g., ADA)",
+        },
+        {
+          name: "toToken",
+          type: "string",
+          description: "The token to swap to (e.g., MIN)",
+        },
+        {
+          name: "totalAmount",
+          type: "number",
+          description: "The total amount of fromToken to swap",
+        },
+      ],
+      output: {
+        name: "toTokenAmount",
+        type: "number",
+        description: "The estimated amount of toToken received",
+      },
+    },
+  ];
+  res.json({ agents });
 });
 
 // 404 handler
