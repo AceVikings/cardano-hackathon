@@ -223,59 +223,60 @@ app.get("/api/available-agents", (req, res) => {
         description: "The generated conversational response",
       },
     },
-      {
-        id: "research-agent",
-        url: "http://localhost:8100",
-        name: "Research Agent",
-        description:
-          "Agent for performing web research, summarization, and data extraction",
-        invokeUrl: "/api/agents/research-agent/invoke",
-        executionCost: "1 ADA",
-        inputParameters: [
-          {
-            name: "query",
-            type: "string",
-            description: "Search or research query to investigate",
-          },
-          {
-            name: "maxResults",
-            type: "number",
-            description: "Maximum number of sources or results to return (optional)",
-            required: false,
-          },
-        ],
-        output: {
-          name: "summary",
+    {
+      id: "research-agent",
+      url: "http://localhost:8100",
+      name: "Research Agent",
+      description:
+        "Agent for performing web research, summarization, and data extraction",
+      invokeUrl: "/api/agents/research-agent/invoke",
+      executionCost: "1 ADA",
+      inputParameters: [
+        {
+          name: "query",
           type: "string",
-          description: "Concise summary of findings",
+          description: "Search or research query to investigate",
         },
+        {
+          name: "maxResults",
+          type: "number",
+          description:
+            "Maximum number of sources or results to return (optional)",
+          required: false,
+        },
+      ],
+      output: {
+        name: "summary",
+        type: "string",
+        description: "Concise summary of findings",
       },
-      {
-        id: "telegram-bot-agent",
-        url: "http://localhost:8200",
-        name: "Telegram Bot Agent",
-        description:
-          "Agent that integrates with Telegram to receive commands and send notifications",
-        invokeUrl: "/api/agents/telegram-bot-agent/invoke",
-        executionCost: "0.5 ADA",
-        inputParameters: [
-          {
-            name: "chatId",
-            type: "string",
-            description: "Telegram chat identifier to send messages to",
-          },
-          {
-            name: "message",
-            type: "string",
-            description: "Message content to send",
-          },
-        ],
-        output: {
-          name: "status",
+    },
+    {
+      id: "telegram-bot-agent",
+      url: "http://localhost:8200",
+      name: "Telegram Bot Agent",
+      description:
+        "Agent that integrates with Telegram to receive commands and send notifications",
+      invokeUrl: "/api/agents/telegram-bot-agent/invoke",
+      executionCost: "0.5 ADA",
+      inputParameters: [
+        {
+          name: "chatId",
           type: "string",
-          description: "Result status (e.g., sent, failed)",
+          description: "Telegram chat identifier to send messages to",
         },
+        {
+          name: "message",
+          type: "string",
+          description: "Message content to send",
+        },
+      ],
+      output: {
+        name: "status",
+        type: "string",
+        description: "Result status (e.g., sent, failed)",
       },
+    },
   ];
   res.json({ agents });
 });
