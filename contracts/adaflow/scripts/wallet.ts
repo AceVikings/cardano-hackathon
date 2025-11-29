@@ -62,9 +62,10 @@ export async function getAgentWallet(): Promise<MeshWallet> {
 
 /**
  * Get the custodial wallet script address on the current network
+ * Uses CBOR-encoded script for correct address derivation matching Aiken's hash
  */
 export function getCustodialWalletAddress(): string {
-  const script = getCustodialWalletScript();
+  const script = getCustodialWalletScript(); // This returns CBOR-encoded script
   const networkId = NETWORK === 'mainnet' ? 1 : 0;
   
   const { address } = serializePlutusScript(

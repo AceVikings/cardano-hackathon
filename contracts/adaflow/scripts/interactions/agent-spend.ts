@@ -101,6 +101,18 @@ async function main() {
     type: WalletRedeemerType.AgentSpend,
   });
 
+  // Create datum to maintain on remaining funds (same as original)
+  const datum: WalletDatum = {
+    owner: userPkh,
+    approvedAgents: [agentPkh],
+  };
+
+  // Calculate change amount to send back to script
+  const remainingLovelace = inputLovelace - spendAmountLovelace;
+  const keepInScript = remainingLovelace > 2_000_000n;
+
+  console.log(`   Remaining in wallet: ${lovelaceToAda(remainingLovelace)} ADA`);
+
   // Build transaction
   console.log('\n🔨 Building transaction...');
 
@@ -109,7 +121,7 @@ async function main() {
     submitter: blockfrostProvider,
   });
 
-  const unsignedTx = await txBuilder
+  let builder = txBuilder
     // Spend the script UTXO
     .spendingPlutusScriptV3()
     .txIn(
@@ -122,7 +134,18 @@ async function main() {
     // Send spent amount to agent
     .txOut(agentAddress, [
       { unit: 'lovelace', quantity: spendAmountLovelace.toString() }
-    ])
+    ]);
+
+  // If there's remaining balance, send it back to the script with the same datum
+  if (keepInScript) {
+    builder = builder
+      .txOut(scriptAddress, [
+        { unit: 'lovelace', quantity: remainingLovelace.toString() }
+      ])
+      .txOutInlineDatumValue(walletDatumToData(datum));
+  }
+
+  const unsignedTx = await builder
     // Collateral
     .txInCollateral(
       collateralUtxo.input.txHash,

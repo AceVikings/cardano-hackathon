@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { applyCborEncoding } from '@meshsdk/core-csl';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,9 +50,16 @@ export const getCustodialWalletScriptHash = (): string => {
   return getCustodialWalletValidator().hash;
 };
 
-// Helper to get the compiled CBOR code
-export const getCustodialWalletScript = (): string => {
+// Helper to get the raw compiled CBOR code (for address derivation)
+export const getCustodialWalletScriptRaw = (): string => {
   return getCustodialWalletValidator().compiledCode;
+};
+
+// Helper to get the compiled CBOR code for tx submission
+// MeshSDK txInScript requires CBOR-encoded script
+export const getCustodialWalletScript = (): string => {
+  const rawScript = getCustodialWalletValidator().compiledCode;
+  return applyCborEncoding(rawScript);
 };
 
 console.log('📜 Blueprint loaded successfully');

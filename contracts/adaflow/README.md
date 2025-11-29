@@ -2,27 +2,19 @@
 
 ## Agent-Governed Custodial Wallet System for Cardano
 
-AdaFlow implements a **Masumi AI agent-compatible** custodial wallet system on Cardano. Users deposit tokens into script-controlled UTXOs, and approved AI agents can execute DeFi operations within user-defined limits.
+AdaFlow implements a **Masumi AI agent-compatible** custodial wallet system on Cardano. Users deposit tokens into script-controlled UTXOs, and approved AI agents can spend freely on behalf of the user.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Architecture Overview (Simplified)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        User's Browser                            │
+│                        User's Wallet                             │
 │  ┌─────────────────┐                                            │
-│  │  Connect Wallet │────┐                                       │
+│  │ Deposit / Setup │────┐                                       │
 │  └─────────────────┘    │                                       │
 └─────────────────────────┼───────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     AdaFlow Backend                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │ Auth Service │  │ Agent Manager│  │ Transaction Builder  │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
-└─────────────────────────┬───────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -32,14 +24,17 @@ AdaFlow implements a **Masumi AI agent-compatible** custodial wallet system on C
 │  │  ┌─────────────────────────────────────────────────────┐   │ │
 │  │  │  WalletDatum                                         │   │ │
 │  │  │  ├── owner: VerificationKeyHash                      │   │ │
-│  │  │  ├── approved_agents: List<VerificationKeyHash>      │   │ │
-│  │  │  ├── max_ada_per_tx: Int (lovelace)                  │   │ │
-│  │  │  ├── max_total_ada: Int (lovelace)                   │   │ │
-│  │  │  ├── total_spent: Int (lovelace)                     │   │ │
-│  │  │  ├── strategy: StrategyConfig                        │   │ │
-│  │  │  └── nonce: Int                                      │   │ │
+│  │  │  └── approved_agents: List<VerificationKeyHash>      │   │ │
 │  │  └─────────────────────────────────────────────────────┘   │ │
 │  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Masumi AI Agent                              │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Agent can spend from wallet (requires signature)          │  │
+│  └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,39 +42,17 @@ AdaFlow implements a **Masumi AI agent-compatible** custodial wallet system on C
 
 ## 📜 Validators
 
-### 1. Custodial Wallet (`validators/custodial_wallet.ak`)
+### Custodial Wallet (`validators/custodial_wallet.ak`)
 
-The main validator controlling user funds with agent-based spending.
+The main validator controlling user funds with agent-based spending. **Simplified design** - approved agents can spend freely without limits.
 
 #### Types
 
 ```aiken
-/// Strategy types for automated DeFi operations
-type StrategyType {
-  Manual                        // No automation, agents propose individual txs
-  YieldFarming                  // Agent can move funds to yield protocols
-  LiquidityProvision            // Agent can provide LP on DEXes
-  Arbitrage                     // Agent can execute arbitrage
-  Custom { strategy_id: Int }   // User-defined strategy
-}
-
-/// Strategy configuration
-type StrategyConfig {
-  strategy_type: StrategyType,
-  min_reserve: Int,           // Minimum ADA to keep (lovelace)
-  auto_compound: Bool,        // Auto-compound rewards
-  max_slippage_bps: Int,      // Max slippage in basis points
-}
-
 /// Wallet datum stored with each UTXO
 type WalletDatum {
-  owner: VerificationKeyHash,
-  approved_agents: List<VerificationKeyHash>,
-  max_ada_per_tx: Int,
-  max_total_ada: Int,
-  total_spent: Int,
-  strategy: StrategyConfig,
-  nonce: Int,
+  owner: VerificationKeyHash,           // User who owns the wallet
+  approved_agents: List<VerificationKeyHash>,  // Agents that can spend
 }
 ```
 
@@ -87,68 +60,67 @@ type WalletDatum {
 
 | Redeemer | Required Signer | Description |
 |----------|-----------------|-------------|
-| `Deposit` | Owner | Add funds to custodial wallet |
-| `AgentSpend { details }` | Approved Agent | Spend within limits |
+| `Deposit` | - | Add funds to custodial wallet |
+| `AgentSpend` | Approved Agent | Spend from wallet |
 | `UserWithdraw` | Owner | Full withdrawal rights |
-| `UpdateConfig { ... }` | Owner | Update limits and strategy |
 | `AddAgent { agent }` | Owner | Authorize new agent |
 | `RemoveAgent { agent }` | Owner | Revoke agent access |
-| `ResetSpentCounter` | Owner | Reset spending counter |
 
 #### Validation Rules
 
+**Deposit:**
+- Anyone can deposit to the wallet address
+- Inline datum specifies owner and approved agents
+
 **AgentSpend:**
-1. ✅ Signing agent must be in `approved_agents` list
-2. ✅ `amount > 0` and `amount <= max_ada_per_tx`
-3. ✅ `total_spent + amount <= max_total_ada`
-4. ✅ Continuation output has updated `total_spent`
-5. ✅ Remaining balance >= `min_reserve`
+- Transaction signer must be in `approved_agents` list
+- Agent can spend any amount (no limits in simplified version)
 
 **UserWithdraw:**
-1. ✅ Owner signature only - no spending limits apply
-2. ✅ User has full control to withdraw anytime
+- Transaction signer must be `owner`
+- Can withdraw entire UTXO
+
+**AddAgent/RemoveAgent:**
+- Transaction signer must be `owner`
+- Modifies the `approved_agents` list
 
 ---
 
-### 2. Authorization NFT (`validators/authorization_nft.ak`)
+## 🚀 Deployment
 
-Optional NFT-based authorization for advanced use cases.
+### Script Information (Preprod)
 
-```aiken
-type AuthorizationDatum {
-  user: VerificationKeyHash,
-  agent: VerificationKeyHash,
-  scope: AuthScope,
-  expires_at: Int,
-  is_active: Bool,
-}
+| Property | Value |
+|----------|-------|
+| Script Hash | `a5c7e74b7e937b2b0e5686c5a364f82bf44672ad55a9c5961a245e98` |
+| Script Address | `addr_test1wzju0e6t06fhk2cw26rvtgmylq4lg3nj4426n3vkrgj9axq07gt6s` |
+| Plutus Version | V3 |
+| Network | Preprod |
 
-type AuthScope {
-  Swap { max_amount: Int }
-  Liquidity { max_amount: Int }
-  Stake { max_amount: Int }
-  FullAccess
-}
-```
+### Tested Transactions
+
+| Operation | TX Hash |
+|-----------|---------|
+| Deposit (10 ADA) | `33561f4b76d7cde73133670d2403d3dcbbae38363cf530fa961460b78dd5e69c` |
+| Agent Spend (2 ADA) | `2fe4363cd7de9e43ce83f515b1b6c73beb92e18ba5be982ce520293bb3f1d458` |
+| User Withdraw (8 ADA) | `274d8211153ff1516c6c8cc3ffe7e36220183c85b33d21394ecbfbe0878a9f1e` |
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Development Setup
 
 ### Prerequisites
 
 - [Aiken](https://aiken-lang.org/) v1.1.19+
 - [Node.js](https://nodejs.org/) v18+
-- Cardano wallet with Preprod tADA
+- [Blockfrost API Key](https://blockfrost.io/)
 
-### Build Contracts
+### Build
 
 ```bash
 cd contracts/adaflow
 aiken build
 ```
-
-This generates `plutus.json` with the compiled validators.
 
 ### Run Tests
 
@@ -156,168 +128,150 @@ This generates `plutus.json` with the compiled validators.
 aiken check
 ```
 
-### Deploy to Preprod
+### Setup Scripts
 
-1. **Configure environment:**
-   ```bash
-   cd scripts
-   cp .env.example .env
-   # Edit .env with your mnemonics and Blockfrost API key
-   ```
+```bash
+cd scripts
+npm install
+cp .env.example .env
+# Edit .env with your mnemonics and Blockfrost API key
+```
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+### Run Interaction Scripts
 
-3. **View deployment info:**
-   ```bash
-   npm run deploy
-   ```
+```bash
+# Deposit funds to custodial wallet
+npx tsx interactions/deposit.ts
 
-4. **Run full test:**
-   ```bash
-   npm run test
-   ```
+# Agent spends from wallet
+npx tsx interactions/agent-spend.ts
+
+# User withdraws funds
+npx tsx interactions/withdraw.ts
+```
 
 ---
 
-## 📁 Directory Structure
+## 📁 Project Structure
 
 ```
-contracts/adaflow/
-├── aiken.toml              # Aiken project config
-├── plutus.json             # Compiled contracts (generated)
-├── README.md               # This file
-│
+adaflow/
 ├── validators/
-│   ├── custodial_wallet.ak # Main custodial wallet validator
-│   └── authorization_nft.ak # Optional NFT authorization
-│
-└── scripts/
-    ├── .env                # Environment variables (secrets)
-    ├── package.json        # Node.js dependencies
-    ├── blueprint.ts        # Contract blueprint parser
-    ├── wallet.ts           # Wallet utilities
-    ├── types.ts            # TypeScript type definitions
-    ├── deploy.ts           # Deployment info script
-    ├── test-full-flow.ts   # Full integration test
-    │
-    └── interactions/
-        ├── deposit.ts      # Deposit ADA to custodial wallet
-        ├── agent-spend.ts  # Agent spends from wallet
-        └── withdraw.ts     # User withdraws funds
+│   └── custodial_wallet.ak     # Main validator
+├── lib/
+│   └── adaflow/
+│       └── types.ak            # Shared types
+├── scripts/
+│   ├── .env                    # Environment config (mnemonics, API keys)
+│   ├── wallet.ts               # Wallet utilities
+│   ├── blueprint.ts            # Blueprint loader
+│   ├── types.ts                # TypeScript types matching Aiken
+│   └── interactions/
+│       ├── deposit.ts          # User deposits to wallet
+│       ├── agent-spend.ts      # Agent spends from wallet  
+│       └── withdraw.ts         # User withdraws from wallet
+├── plutus.json                 # Compiled blueprint
+└── aiken.toml                  # Aiken configuration
 ```
 
 ---
 
-## 🔐 Security Model
+## 🔑 Environment Variables
 
-### User Protections
-- **Owner always has full withdrawal rights** - no agent can lock funds
-- **Spending limits enforced on-chain** - agents cannot exceed configured limits
-- **Nonce prevents replay attacks** - config updates require nonce increment
-- **Minimum reserve protection** - agents must leave minimum balance
+Create a `.env` file in the `scripts/` directory:
 
-### Agent Constraints
-- **Must be explicitly approved** - added via `AddAgent` redeemer
-- **Per-transaction limits** - `max_ada_per_tx` enforced
-- **Lifetime limits** - `max_total_ada` tracked in `total_spent`
-- **Strategy-based restrictions** - additional rules per strategy type
+```env
+# Network
+NETWORK=preprod
+
+# Blockfrost API Key
+BLOCKFROST_API_KEY=your_preprod_api_key
+
+# User wallet mnemonic (24 words)
+USER_MNEMONIC=word1 word2 ... word24
+
+# Agent wallet mnemonic (24 words)
+AGENT_MNEMONIC=word1 word2 ... word24
+```
 
 ---
 
-## 💡 Usage Examples
+## 📊 Datum Format
 
-### Deposit Funds
+The wallet datum uses MeshSDK's PlutusData format:
 
 ```typescript
-import { walletDatumToData, createInitialDatum } from './types.js';
-
-// Create datum authorizing an agent
-const datum = createInitialDatum(
-  userPkh,      // Owner's payment key hash
-  agentPkh,     // Agent's payment key hash
-  10,           // Max 10 ADA per transaction
-  100           // Max 100 ADA total spending
-);
-
-// Send to script address with datum
-txBuilder
-  .txOut(scriptAddress, [{ unit: 'lovelace', quantity: depositAmount }])
-  .txOutInlineDatumValue(walletDatumToData(datum))
+// TypeScript datum format
+const datum = {
+  alternative: 0,  // Constructor index
+  fields: [
+    ownerPkh,      // Hex string (becomes bytes)
+    [agentPkh],    // Array of hex strings (becomes list of bytes)
+  ],
+};
 ```
 
-### Agent Spend
-
-```typescript
-import { walletRedeemerToData, WalletRedeemerType, stringToHex } from './types.js';
-
-const redeemer = walletRedeemerToData({
-  type: WalletRedeemerType.AgentSpend,
-  details: {
-    amount: 2_000_000n,  // 2 ADA
-    purpose: stringToHex('DEX swap'),
-  },
-});
-
-txBuilder
-  .spendingPlutusScriptV3()
-  .txIn(utxo.txHash, utxo.outputIndex)
-  .txInInlineDatumPresent()
-  .txInRedeemerValue(redeemer)
-  .txInScript(scriptCode)
-  // ... continuation output with updated datum
-  .requiredSignerHash(agentPkh)
+**CBOR representation:**
 ```
-
-### User Withdraw
-
-```typescript
-const redeemer = walletRedeemerToData({
-  type: WalletRedeemerType.UserWithdraw,
-});
-
-// Owner can withdraw everything - no continuation output needed
-txBuilder
-  .spendingPlutusScriptV3()
-  .txIn(utxo.txHash, utxo.outputIndex)
-  .txInInlineDatumPresent()
-  .txInRedeemerValue(redeemer)
-  .txInScript(scriptCode)
-  .txOut(userAddress, [{ unit: 'lovelace', quantity: fullBalance }])
-  .requiredSignerHash(userPkh)
+d8799f                        -- Constructor 0
+  581c...                     -- owner (28-byte verification key hash)
+  9f                          -- list start
+    581c...                   -- agent PKH
+  ff                          -- list end
+ff                            -- constructor end
 ```
 
 ---
 
-## 🧪 Test Scenarios
+## ⚠️ Important Notes
 
-### Happy Path
-1. ✅ User deposits 10 ADA with agent authorization
-2. ✅ Agent spends 2 ADA (within limits)
-3. ✅ User withdraws remaining 8 ADA
+### MeshSDK Script Encoding
 
-### Limit Enforcement
-1. ✅ Agent cannot spend more than `max_ada_per_tx`
-2. ✅ Agent cannot exceed `max_total_ada` lifetime limit
-3. ✅ Agent must leave `min_reserve` in wallet
+When using MeshSDK v1.8.x, the script from Aiken's `plutus.json` needs CBOR encoding for transaction submission:
 
-### Authorization
-1. ✅ Unauthorized agent cannot spend
-2. ✅ Owner can add/remove agents
-3. ✅ Owner can update limits anytime
+```typescript
+import { applyCborEncoding } from '@meshsdk/core-csl';
+
+// Raw script from blueprint
+const rawScript = blueprint.validators[0].compiledCode;
+
+// Encoded script for correct address and txInScript
+const encodedScript = applyCborEncoding(rawScript);
+
+// For address derivation - use encoded script
+const { address } = serializePlutusScript({ code: encodedScript, version: 'V3' });
+
+// For txInScript - use encoded script
+txBuilder.txInScript(encodedScript);
+```
+
+### Datum Format
+
+MeshSDK's `txOutInlineDatumValue` expects:
+- `alternative` (not `constructor`) for constructor index
+- Raw hex strings become bytes
+- Arrays become Plutus lists
+
+```typescript
+// ✅ Correct format
+{ alternative: 0, fields: ['deadbeef', ['cafebabe']] }
+
+// ❌ Wrong formats
+{ constructor: 0, fields: [...] }  // 'constructor' not supported
+mConStr(0, [...])  // Doesn't serialize correctly for inline datums
+```
 
 ---
 
-## 🔗 Links
+## 📚 Resources
 
-- **CardanoScan (Preprod)**: https://preprod.cardanoscan.io
-- **Aiken Documentation**: https://aiken-lang.org
-- **MeshSDK**: https://meshjs.dev
+- [Aiken Documentation](https://aiken-lang.org/documentation)
+- [MeshSDK Documentation](https://meshjs.dev/)
+- [Cardano Plutus Scripts](https://docs.cardano.org/smart-contracts/)
+- [Blockfrost API](https://docs.blockfrost.io/)
 
 ---
 
 ## 📄 License
 
-Apache-2.0
+MIT License
