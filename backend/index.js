@@ -8,6 +8,7 @@ require("dotenv").config();
 const authRoutes = require("./routes/auth");
 const walletRoutes = require("./routes/wallet");
 const workflowRoutes = require("./routes/workflows");
+const unsignedSwapRoutes = require("./routes/unsignedSwap");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -43,6 +44,10 @@ mongoose
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/workflows", workflowRoutes);
+const agentRoutes = require("./routes/agents");
+app.use("/api/agents", agentRoutes);
+// Unauthenticated unsigned swap route (returns unsigned CBOR to be signed by user)
+app.use("/api/unsigned-swap", unsignedSwapRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -72,7 +77,8 @@ app.get("/api/available-triggers", (req, res) => {
         {
           name: "cronExpression",
           type: "string",
-          description: "Cron expression (e.g., '*/5 * * * *' for every 5 minutes)",
+          description:
+            "Cron expression (e.g., '*/5 * * * *' for every 5 minutes)",
           required: true,
           default: "0 * * * *",
           presets: [
@@ -147,7 +153,8 @@ app.get("/api/available-triggers", (req, res) => {
         {
           name: "tokenFilter",
           type: "string",
-          description: "Only trigger for specific token (optional, leave empty for any)",
+          description:
+            "Only trigger for specific token (optional, leave empty for any)",
           required: false,
         },
       ],
@@ -200,6 +207,7 @@ app.get("/api/available-agents", (req, res) => {
     },
     {
       id: "conversation-agent",
+      url: "http://139.84.155.199:8000",
       name: "Conversation Agent",
       description:
         "Agent for processing conversational input and generating responses",

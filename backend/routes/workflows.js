@@ -1,8 +1,12 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Workflow = require('../models/Workflow');
-const { authenticate } = require('../middleware/auth');
-const { executeWorkflow, validateWorkflow, TriggerType } = require('../services/workflowExecutor');
+const Workflow = require("../models/Workflow");
+const { authenticate } = require("../middleware/auth");
+const {
+  executeWorkflow,
+  validateWorkflow,
+  TriggerType,
+} = require("../services/workflowExecutor");
 
 // All routes require authentication
 router.use(authenticate);
@@ -10,40 +14,40 @@ router.use(authenticate);
 // ============================================================================
 // GET /api/workflows - Get all workflows for current user (basic info only)
 // ============================================================================
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { status } = req.query;
-    
+
     // Build query
     const query = { userId: req.user._id };
-    if (status && ['active', 'inactive'].includes(status)) {
+    if (status && ["active", "inactive"].includes(status)) {
       query.status = status;
     }
 
     // Fetch workflows with only basic fields (no nodes/edges)
     const workflows = await Workflow.find(query)
-      .select('name description status stats createdAt updatedAt')
+      .select("name description status stats createdAt updatedAt")
       .sort({ updatedAt: -1 })
       .lean();
 
     // Add node/edge counts from a separate aggregation for efficiency
-    const workflowIds = workflows.map(w => w._id);
+    const workflowIds = workflows.map((w) => w._id);
     const counts = await Workflow.aggregate([
       { $match: { _id: { $in: workflowIds } } },
       {
         $project: {
           _id: 1,
-          nodeCount: { $size: { $ifNull: ['$nodes', []] } },
-          edgeCount: { $size: { $ifNull: ['$edges', []] } },
+          nodeCount: { $size: { $ifNull: ["$nodes", []] } },
+          edgeCount: { $size: { $ifNull: ["$edges", []] } },
         },
       },
     ]);
 
     // Create a map for quick lookup
-    const countMap = new Map(counts.map(c => [c._id.toString(), c]));
+    const countMap = new Map(counts.map((c) => [c._id.toString(), c]));
 
     // Combine data
-    const result = workflows.map(w => ({
+    const result = workflows.map((w) => ({
       id: w._id,
       name: w.name,
       description: w.description,
@@ -61,10 +65,10 @@ router.get('/', async (req, res) => {
       count: result.length,
     });
   } catch (error) {
-    console.error('Error fetching workflows:', error);
+    console.error("Error fetching workflows:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch workflows',
+      error: "Failed to fetch workflows",
     });
   }
 });
@@ -72,7 +76,7 @@ router.get('/', async (req, res) => {
 // ============================================================================
 // GET /api/workflows/:id - Get single workflow by ID (full data)
 // ============================================================================
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -84,7 +88,7 @@ router.get('/:id', async (req, res) => {
     if (!workflow) {
       return res.status(404).json({
         success: false,
-        error: 'Workflow not found',
+        error: "Workflow not found",
       });
     }
 
@@ -104,19 +108,19 @@ router.get('/:id', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching workflow:', error);
-    
+    console.error("Error fetching workflow:", error);
+
     // Handle invalid ObjectId
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow ID',
+        error: "Invalid workflow ID",
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch workflow',
+      error: "Failed to fetch workflow",
     });
   }
 });
@@ -124,15 +128,15 @@ router.get('/:id', async (req, res) => {
 // ============================================================================
 // POST /api/workflows - Create new workflow
 // ============================================================================
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { name, description, nodes, edges, viewport, status } = req.body;
 
     // Validate required fields
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Workflow name is required',
+        error: "Workflow name is required",
       });
     }
 
@@ -140,8 +144,8 @@ router.post('/', async (req, res) => {
     const workflow = new Workflow({
       userId: req.user._id,
       name: name.trim(),
-      description: description?.trim() || '',
-      status: status === 'active' ? 'active' : 'inactive',
+      description: description?.trim() || "",
+      status: status === "active" ? "active" : "inactive",
       nodes: nodes || [],
       edges: edges || [],
       viewport: viewport || { x: 0, y: 0, zoom: 1 },
@@ -165,20 +169,20 @@ router.post('/', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error creating workflow:', error);
-    
+    console.error("Error creating workflow:", error);
+
     // Handle validation errors
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow data',
+        error: "Invalid workflow data",
         details: error.message,
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to create workflow',
+      error: "Failed to create workflow",
     });
   }
 });
@@ -186,7 +190,7 @@ router.post('/', async (req, res) => {
 // ============================================================================
 // PUT /api/workflows/:id - Update workflow
 // ============================================================================
-router.put('/:id', async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, nodes, edges, viewport, status } = req.body;
@@ -200,27 +204,27 @@ router.put('/:id', async (req, res) => {
     if (!workflow) {
       return res.status(404).json({
         success: false,
-        error: 'Workflow not found',
+        error: "Workflow not found",
       });
     }
 
     // Update fields if provided
     if (name !== undefined) {
-      if (typeof name !== 'string' || name.trim().length === 0) {
+      if (typeof name !== "string" || name.trim().length === 0) {
         return res.status(400).json({
           success: false,
-          error: 'Workflow name cannot be empty',
+          error: "Workflow name cannot be empty",
         });
       }
       workflow.name = name.trim();
     }
 
     if (description !== undefined) {
-      workflow.description = description?.trim() || '';
+      workflow.description = description?.trim() || "";
     }
 
     if (status !== undefined) {
-      if (!['active', 'inactive'].includes(status)) {
+      if (!["active", "inactive"].includes(status)) {
         return res.status(400).json({
           success: false,
           error: 'Status must be "active" or "inactive"',
@@ -259,28 +263,28 @@ router.put('/:id', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error updating workflow:', error);
-    
+    console.error("Error updating workflow:", error);
+
     // Handle invalid ObjectId
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow ID',
+        error: "Invalid workflow ID",
       });
     }
-    
+
     // Handle validation errors
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow data',
+        error: "Invalid workflow data",
         details: error.message,
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to update workflow',
+      error: "Failed to update workflow",
     });
   }
 });
@@ -288,12 +292,12 @@ router.put('/:id', async (req, res) => {
 // ============================================================================
 // PATCH /api/workflows/:id/status - Toggle workflow status
 // ============================================================================
-router.patch('/:id/status', async (req, res) => {
+router.patch("/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!status || !['active', 'inactive'].includes(status)) {
+    if (!status || !["active", "inactive"].includes(status)) {
       return res.status(400).json({
         success: false,
         error: 'Status must be "active" or "inactive"',
@@ -304,12 +308,12 @@ router.patch('/:id/status', async (req, res) => {
       { _id: id, userId: req.user._id },
       { status, updatedAt: new Date() },
       { new: true }
-    ).select('name description status stats createdAt updatedAt');
+    ).select("name description status stats createdAt updatedAt");
 
     if (!workflow) {
       return res.status(404).json({
         success: false,
-        error: 'Workflow not found',
+        error: "Workflow not found",
       });
     }
 
@@ -326,18 +330,18 @@ router.patch('/:id/status', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error updating workflow status:', error);
-    
-    if (error.name === 'CastError') {
+    console.error("Error updating workflow status:", error);
+
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow ID',
+        error: "Invalid workflow ID",
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to update workflow status',
+      error: "Failed to update workflow status",
     });
   }
 });
@@ -345,7 +349,7 @@ router.patch('/:id/status', async (req, res) => {
 // ============================================================================
 // DELETE /api/workflows/:id - Delete workflow
 // ============================================================================
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -357,27 +361,27 @@ router.delete('/:id', async (req, res) => {
     if (!workflow) {
       return res.status(404).json({
         success: false,
-        error: 'Workflow not found',
+        error: "Workflow not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Workflow deleted successfully',
+      message: "Workflow deleted successfully",
     });
   } catch (error) {
-    console.error('Error deleting workflow:', error);
-    
-    if (error.name === 'CastError') {
+    console.error("Error deleting workflow:", error);
+
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow ID',
+        error: "Invalid workflow ID",
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to delete workflow',
+      error: "Failed to delete workflow",
     });
   }
 });
@@ -385,14 +389,13 @@ router.delete('/:id', async (req, res) => {
 // ============================================================================
 // POST /api/workflows/:id/execute - Execute workflow manually
 // ============================================================================
-router.post('/:id/execute', async (req, res) => {
+router.post("/:id/execute", async (req, res) => {
   try {
     const { id } = req.params;
-    const { triggerData = {} } = req.body;
 
     // Validate workflow first
     const validation = await validateWorkflow(id, { userId: req.user._id });
-    
+
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
@@ -400,31 +403,29 @@ router.post('/:id/execute', async (req, res) => {
       });
     }
 
-    // Execute the workflow
-    const result = await executeWorkflow(
-      id,
-      TriggerType.MANUAL,
-      triggerData,
-      { userId: req.user._id }
-    );
+    // Execute the workflow using input parameters from the workflow itself
+    const result = await executeWorkflow(id, TriggerType.MANUAL, null, {
+      userId: req.user._id,
+      authorization: req.headers.authorization,
+    });
 
     res.json({
       success: true,
       execution: result,
     });
   } catch (error) {
-    console.error('Error executing workflow:', error);
-    
-    if (error.name === 'CastError') {
+    console.error("Error executing workflow:", error);
+
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow ID',
+        error: "Invalid workflow ID",
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: error.message || 'Failed to execute workflow',
+      error: error.message || "Failed to execute workflow",
     });
   }
 });
@@ -432,12 +433,12 @@ router.post('/:id/execute', async (req, res) => {
 // ============================================================================
 // POST /api/workflows/:id/validate - Validate workflow without executing
 // ============================================================================
-router.post('/:id/validate', async (req, res) => {
+router.post("/:id/validate", async (req, res) => {
   try {
     const { id } = req.params;
 
     const validation = await validateWorkflow(id, { userId: req.user._id });
-    
+
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
@@ -448,7 +449,7 @@ router.post('/:id/validate', async (req, res) => {
 
     // Return basic workflow info with validation result
     const workflow = validation.workflow;
-    
+
     res.json({
       success: true,
       valid: true,
@@ -457,23 +458,25 @@ router.post('/:id/validate', async (req, res) => {
         name: workflow.name,
         status: workflow.status,
         nodeCount: workflow.nodes?.length || 0,
-        agentCount: workflow.nodes?.filter(n => n.type === 'agent').length || 0,
-        triggerType: workflow.nodes?.find(n => n.type === 'trigger')?.data?.triggerType,
+        agentCount:
+          workflow.nodes?.filter((n) => n.type === "agent").length || 0,
+        triggerType: workflow.nodes?.find((n) => n.type === "trigger")?.data
+          ?.triggerType,
       },
     });
   } catch (error) {
-    console.error('Error validating workflow:', error);
-    
-    if (error.name === 'CastError') {
+    console.error("Error validating workflow:", error);
+
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid workflow ID',
+        error: "Invalid workflow ID",
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to validate workflow',
+      error: "Failed to validate workflow",
     });
   }
 });
