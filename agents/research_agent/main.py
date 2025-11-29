@@ -397,10 +397,10 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == "api":
         # Run API mode
-        port = int(os.environ.get("API_PORT", 8000))
+        port = int(os.environ.get("API_PORT", 8012))
         # Set host from environment variable, default to localhost for security.
         # Use host=0.0.0.0 to allow external connections (e.g., in Docker or production).
-        host = os.environ.get("API_HOST", "127.0.0.1")
+        host = os.environ.get("API_HOST", "0.0.0.0")
 
         print("\n" + "=" * 70)
         print("🚀 Starting FastAPI server with Masumi integration...")

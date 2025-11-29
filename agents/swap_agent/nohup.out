@@ -1,0 +1,18 @@
+INFO:     Started server process [244247]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8008 (Press CTRL+C to quit)
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8008/docs
+Availability Check:       http://0.0.0.0:8008/availability
+Status Check:             http://0.0.0.0:8008/status
+Input Schema:             http://0.0.0.0:8008/input_schema
+
+======================================================================
+
+INFO:     27.61.34.93:36688 - "GET /docs HTTP/1.1" 200 OK
+INFO:     27.61.34.93:36688 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     46.101.200.95:34503 - "GET /availability HTTP/1.1" 200 OK

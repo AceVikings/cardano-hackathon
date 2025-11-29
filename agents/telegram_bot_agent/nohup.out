@@ -1,0 +1,71 @@
+/root/cardano-hackathon/agents/telegram_bot_agent/main.py:51: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  class StartJobRequest(BaseModel):
+INFO:     Started server process [244729]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8004 (Press CTRL+C to quit)
+/root/cardano-hackathon/agents/telegram_bot_agent/main.py:51: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  class StartJobRequest(BaseModel):
+INFO:     Started server process [265109]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('127.0.0.1', 8004): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://127.0.0.1:8004/docs
+Availability Check:       http://127.0.0.1:8004/availability
+Status Check:             http://127.0.0.1:8004/status
+Input Schema:             http://127.0.0.1:8004/input_schema
+
+======================================================================
+
+/root/cardano-hackathon/agents/telegram_bot_agent/main.py:51: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  class StartJobRequest(BaseModel):
+INFO:     Started server process [265522]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 8004): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8004/docs
+Availability Check:       http://0.0.0.0:8004/availability
+Status Check:             http://0.0.0.0:8004/status
+Input Schema:             http://0.0.0.0:8004/input_schema
+
+======================================================================
+
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [244729]
+/root/cardano-hackathon/agents/telegram_bot_agent/main.py:51: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  class StartJobRequest(BaseModel):
+INFO:     Started server process [266711]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8004/docs
+Availability Check:       http://0.0.0.0:8004/availability
+Status Check:             http://0.0.0.0:8004/status
+Input Schema:             http://0.0.0.0:8004/input_schema
+
+======================================================================
+
+INFO:     27.61.34.93:35146 - "GET /docs HTTP/1.1" 200 OK
+INFO:     27.61.34.93:35146 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     202.62.82.52:63697 - "GET /availability HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64977 - "GET /docs HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64977 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     46.101.200.95:16185 - "GET /availability HTTP/1.1" 200 OK

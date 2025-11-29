@@ -1,0 +1,20 @@
+/root/cardano-hackathon/agents/research_agent/main.py:52: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  class StartJobRequest(BaseModel):
+INFO:     Started server process [243756]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8012 (Press CTRL+C to quit)
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8012/docs
+Availability Check:       http://0.0.0.0:8012/availability
+Status Check:             http://0.0.0.0:8012/status
+Input Schema:             http://0.0.0.0:8012/input_schema
+
+======================================================================
+
+INFO:     27.61.34.93:33124 - "GET /docs HTTP/1.1" 200 OK
+INFO:     27.61.34.93:33124 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     46.101.200.95:43154 - "GET /availability HTTP/1.1" 200 OK

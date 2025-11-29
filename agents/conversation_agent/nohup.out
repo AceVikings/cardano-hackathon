@@ -1,0 +1,17 @@
+INFO:     Started server process [243216]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 8000): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8000/docs
+Availability Check:       http://0.0.0.0:8000/availability
+Status Check:             http://0.0.0.0:8000/status
+Input Schema:             http://0.0.0.0:8000/input_schema
+
+======================================================================
+

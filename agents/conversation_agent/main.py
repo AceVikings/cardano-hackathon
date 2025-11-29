@@ -174,7 +174,7 @@ async def handle_payment_status(job_id: str, payment_id: str) -> None:
         
         # Update job status to running
         jobs[job_id]["status"] = "running"
-        logger.info(f"Input data: {jobs[job_id]["input_data"]}")
+        logger.info(f"Input data: {jobs[job_id]['input_data']}")
 
         # Execute the AI task
         result = await execute_crew_task(jobs[job_id]["input_data"])
@@ -337,7 +337,7 @@ if __name__ == "__main__":
         port = int(os.environ.get("API_PORT", 8000))
         # Set host from environment variable, default to localhost for security.
         # Use host=0.0.0.0 to allow external connections (e.g., in Docker or production).
-        host = os.environ.get("API_HOST", "127.0.0.1")
+        host = os.environ.get("API_HOST", "0.0.0.0")
 
         print("\n" + "=" * 70)
         print("🚀 Starting FastAPI server with Masumi integration...")
