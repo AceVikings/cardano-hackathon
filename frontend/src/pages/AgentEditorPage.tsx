@@ -1,7 +1,7 @@
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Play, Trash2 } from 'lucide-react';
-import AgentEditor from '../components/AgentEditor';
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import AgentEditor from "../components/AgentEditor";
 
 export default function AgentEditorPage() {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function AgentEditorPage() {
             className="p-2 rounded-lg glass text-sea-mist hover:text-foam-white transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate("/dashboard")}
           >
             <ArrowLeft className="w-5 h-5" />
           </motion.button>
@@ -24,36 +24,10 @@ export default function AgentEditorPage() {
               Agent Workflow Editor
             </h1>
             <p className="text-sm text-sea-mist/60">
-              Drag agents from the sidebar and connect them to build your workflow
+              Drag agents from the sidebar and connect them to build your
+              workflow
             </p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <motion.button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg glass text-sea-mist hover:text-foam-white transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Trash2 className="w-4 h-4" />
-            <span className="text-sm">Clear</span>
-          </motion.button>
-          <motion.button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg glass text-sea-mist hover:text-foam-white transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Save className="w-4 h-4" />
-            <span className="text-sm">Save</span>
-          </motion.button>
-          <motion.button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-aqua-glow text-deep-ocean font-semibold"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Play className="w-4 h-4" />
-            <span className="text-sm">Deploy</span>
-          </motion.button>
         </div>
       </div>
 

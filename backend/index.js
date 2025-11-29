@@ -49,6 +49,122 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Available triggers endpoint
+app.get("/api/available-triggers", (req, res) => {
+  const triggers = [
+    {
+      id: "manual",
+      type: "manual",
+      name: "Manual Trigger",
+      description: "Execute workflow manually with a button click",
+      icon: "play",
+      color: "green",
+      configSchema: [],
+    },
+    {
+      id: "cron",
+      type: "cron",
+      name: "Scheduled (Cron)",
+      description: "Run workflow on a recurring time schedule",
+      icon: "clock",
+      color: "violet",
+      configSchema: [
+        {
+          name: "cronExpression",
+          type: "string",
+          description: "Cron expression (e.g., '*/5 * * * *' for every 5 minutes)",
+          required: true,
+          default: "0 * * * *",
+          presets: [
+            { label: "Every 5 minutes", value: "*/5 * * * *" },
+            { label: "Every 15 minutes", value: "*/15 * * * *" },
+            { label: "Every 30 minutes", value: "*/30 * * * *" },
+            { label: "Every hour", value: "0 * * * *" },
+            { label: "Every day at midnight", value: "0 0 * * *" },
+            { label: "Every week on Monday", value: "0 0 * * 1" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "price_gte",
+      type: "price_gte",
+      name: "Price ≥ Target",
+      description: "Trigger when a token price rises above or equals target",
+      icon: "trending-up",
+      color: "blue",
+      configSchema: [
+        {
+          name: "token",
+          type: "string",
+          description: "The token to monitor (e.g., ADA, MIN)",
+          required: true,
+        },
+        {
+          name: "targetPrice",
+          type: "number",
+          description: "The target price threshold in USD",
+          required: true,
+        },
+      ],
+    },
+    {
+      id: "price_lte",
+      type: "price_lte",
+      name: "Price ≤ Target",
+      description: "Trigger when a token price falls below or equals target",
+      icon: "trending-down",
+      color: "orange",
+      configSchema: [
+        {
+          name: "token",
+          type: "string",
+          description: "The token to monitor (e.g., ADA, MIN)",
+          required: true,
+        },
+        {
+          name: "targetPrice",
+          type: "number",
+          description: "The target price threshold in USD",
+          required: true,
+        },
+      ],
+    },
+    {
+      id: "wallet_receive",
+      type: "wallet_receive",
+      name: "Wallet Received",
+      description: "Trigger when your wallet receives tokens",
+      icon: "download",
+      color: "emerald",
+      configSchema: [
+        {
+          name: "minAmount",
+          type: "number",
+          description: "Minimum amount to trigger (optional)",
+          required: false,
+        },
+        {
+          name: "tokenFilter",
+          type: "string",
+          description: "Only trigger for specific token (optional, leave empty for any)",
+          required: false,
+        },
+      ],
+    },
+    {
+      id: "webhook",
+      type: "webhook",
+      name: "Webhook",
+      description: "Trigger via external HTTP webhook call",
+      icon: "webhook",
+      color: "purple",
+      configSchema: [],
+    },
+  ];
+  res.json({ triggers });
+});
+
 // Available agents endpoint
 app.get("/api/available-agents", (req, res) => {
   const agents = [

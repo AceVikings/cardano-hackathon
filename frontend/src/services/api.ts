@@ -198,6 +198,46 @@ export async function getAvailableAgents(): Promise<AvailableAgent[]> {
 }
 
 // ============================================================================
+// Available Triggers API
+// ============================================================================
+
+export interface TriggerConfigPreset {
+  label: string;
+  value: string;
+}
+
+export interface TriggerConfigField {
+  name: string;
+  type: string;
+  description: string;
+  required: boolean;
+  default?: string | number;
+  presets?: TriggerConfigPreset[];
+}
+
+export interface AvailableTrigger {
+  id: string;
+  type: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  configSchema: TriggerConfigField[];
+}
+
+export interface AvailableTriggersResponse {
+  triggers: AvailableTrigger[];
+}
+
+/**
+ * Get available triggers from the API
+ */
+export async function getAvailableTriggers(): Promise<AvailableTrigger[]> {
+  const response = await apiRequest<AvailableTriggersResponse>('/available-triggers');
+  return response.triggers;
+}
+
+// ============================================================================
 // Workflow API
 // ============================================================================
 

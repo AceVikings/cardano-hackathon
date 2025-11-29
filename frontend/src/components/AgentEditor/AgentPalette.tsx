@@ -1,38 +1,32 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, TrendingUp, TrendingDown, Send, Play, Bot, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
-import { getAvailableAgents, type AvailableAgent } from '../../services/api';
+import { Zap, TrendingUp, TrendingDown, Send, Play, Bot, RefreshCw, ChevronDown, ChevronUp, Clock, Download, Webhook } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { getAvailableAgents, getAvailableTriggers, type AvailableAgent, type AvailableTrigger } from '../../services/api';
 
 interface AgentPaletteProps {
   onDragStart: (event: React.DragEvent, nodeType: string, data: Record<string, unknown>) => void;
 }
 
-const triggerTypes = [
-  {
-    type: 'trigger',
-    triggerType: 'manual',
-    label: 'Manual Trigger',
-    description: 'Execute workflow manually',
-    icon: Play,
-    gradient: 'from-bioluminescent to-emerald-500',
-  },
-  {
-    type: 'trigger',
-    triggerType: 'price_gte',
-    label: 'Price ≥ Target',
-    description: 'Trigger when price rises',
-    icon: TrendingUp,
-    gradient: 'from-aqua-glow to-current-blue',
-  },
-  {
-    type: 'trigger',
-    triggerType: 'price_lte',
-    label: 'Price ≤ Target',
-    description: 'Trigger when price falls',
-    icon: TrendingDown,
-    gradient: 'from-coral to-orange-500',
-  },
-];
+// Map backend icon names to Lucide icons
+const iconMap: Record<string, LucideIcon> = {
+  'play': Play,
+  'clock': Clock,
+  'trending-up': TrendingUp,
+  'trending-down': TrendingDown,
+  'download': Download,
+  'webhook': Webhook,
+};
+
+// Map backend color names to Tailwind gradients
+const colorGradientMap: Record<string, string> = {
+  'green': 'from-bioluminescent to-emerald-500',
+  'violet': 'from-violet-500 to-purple-500',
+  'blue': 'from-aqua-glow to-current-blue',
+  'orange': 'from-coral to-orange-500',
+  'emerald': 'from-emerald-500 to-teal-500',
+  'purple': 'from-purple-500 to-indigo-500',
+};
 
 // Helper to get icon and gradient for an agent
 const getAgentStyle = (agentName: string) => {
@@ -48,21 +42,34 @@ const getAgentStyle = (agentName: string) => {
 
 export default function AgentPalette({ onDragStart }: AgentPaletteProps) {
   const [availableAgents, setAvailableAgents] = useState<AvailableAgent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [availableTriggers, setAvailableTriggers] = useState<AvailableTrigger[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(true);
+  const [loadingTriggers, setLoadingTriggers] = useState(true);
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAgents = async () => {
+    const fetchData = async () => {
+      // Fetch agents
       try {
         const agents = await getAvailableAgents();
         setAvailableAgents(agents);
       } catch (err) {
         console.error('Failed to fetch available agents:', err);
       } finally {
-        setLoading(false);
+        setLoadingAgents(false);
+      }
+
+      // Fetch triggers
+      try {
+        const triggers = await getAvailableTriggers();
+        setAvailableTriggers(triggers);
+      } catch (err) {
+        console.error('Failed to fetch available triggers:', err);
+      } finally {
+        setLoadingTriggers(false);
       }
     };
-    fetchAgents();
+    fetchData();
   }, []);
 
   return (
@@ -72,37 +79,47 @@ export default function AgentPalette({ onDragStart }: AgentPaletteProps) {
       
       {/* Trigger Nodes */}
       <div className="space-y-2 mb-6">
-        {triggerTypes.map((trigger) => {
-          const Icon = trigger.icon;
-          return (
-            <motion.div
-              key={trigger.triggerType}
-              draggable
-              onDragStart={(e) => onDragStart(e as unknown as React.DragEvent, trigger.type, {
-                label: trigger.label,
-                triggerType: trigger.triggerType,
-              })}
-              className="flex items-center gap-3 p-3 rounded-lg bg-abyss/50 border border-sea-mist/10 cursor-grab hover:border-bioluminescent/30 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98, cursor: 'grabbing' }}
-            >
-              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${trigger.gradient} flex items-center justify-center flex-shrink-0`}>
-                <Icon className="w-4 h-4 text-foam-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foam-white truncate">{trigger.label}</p>
-                <p className="text-xs text-sea-mist/50 truncate">{trigger.description}</p>
-              </div>
-            </motion.div>
-          );
-        })}
+        {loadingTriggers ? (
+          <div className="flex items-center justify-center py-6">
+            <RefreshCw className="w-5 h-5 text-bioluminescent animate-spin" />
+          </div>
+        ) : availableTriggers.length === 0 ? (
+          <p className="text-xs text-sea-mist/50 py-4 text-center">No triggers available</p>
+        ) : (
+          availableTriggers.map((trigger) => {
+            const Icon = iconMap[trigger.icon] || Play;
+            const gradient = colorGradientMap[trigger.color] || 'from-gray-500 to-gray-600';
+            return (
+              <motion.div
+                key={trigger.id}
+                draggable
+                onDragStart={(e) => onDragStart(e as unknown as React.DragEvent, 'trigger', {
+                  label: trigger.name,
+                  triggerType: trigger.type,
+                  configSchema: trigger.configSchema,
+                })}
+                className="flex items-center gap-3 p-3 rounded-lg bg-abyss/50 border border-sea-mist/10 cursor-grab hover:border-bioluminescent/30 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98, cursor: 'grabbing' }}
+              >
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className="w-4 h-4 text-foam-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foam-white truncate">{trigger.name}</p>
+                  <p className="text-xs text-sea-mist/50 truncate">{trigger.description}</p>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
       </div>
 
       <h3 className="text-sm font-semibold text-foam-white mb-4">Available Agents</h3>
       
       {/* Agent Nodes from API */}
       <div className="space-y-2 mb-6">
-        {loading ? (
+        {loadingAgents ? (
           <div className="flex items-center justify-center py-6">
             <RefreshCw className="w-5 h-5 text-aqua-glow animate-spin" />
           </div>

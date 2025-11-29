@@ -1,21 +1,37 @@
 import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { Play, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Play, TrendingUp, TrendingDown, Clock, Download, Webhook, Copy, Check } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export interface TriggerNodeData {
   label: string;
-  triggerType: 'manual' | 'price_gte' | 'price_lte' | 'schedule';
+  triggerType: 'manual' | 'price_gte' | 'price_lte' | 'cron' | 'schedule' | 'wallet_receive' | 'webhook';
   token?: string;
   targetPrice?: string;
   condition?: '>=' | '<=';
+  cronExpression?: string;
+  minAmount?: string;
+  tokenFilter?: string;
+  webhookUrl?: string;
 }
 
-const triggerConfig = {
+interface TriggerConfigItem {
+  icon: LucideIcon;
+  gradient: string;
+  description: string;
+}
+
+const triggerConfig: Record<string, TriggerConfigItem> = {
   manual: {
     icon: Play,
     gradient: 'from-bioluminescent to-emerald-500',
     description: 'Manually triggered',
+  },
+  cron: {
+    icon: Clock,
+    gradient: 'from-violet-500 to-purple-500',
+    description: 'Runs on schedule',
   },
   price_gte: {
     icon: TrendingUp,
@@ -32,15 +48,49 @@ const triggerConfig = {
     gradient: 'from-purple-500 to-current-blue',
     description: 'Scheduled',
   },
+  wallet_receive: {
+    icon: Download,
+    gradient: 'from-emerald-500 to-teal-500',
+    description: 'Triggered on receiving tokens',
+  },
+  webhook: {
+    icon: Webhook,
+    gradient: 'from-purple-500 to-indigo-500',
+    description: 'Triggered via HTTP webhook',
+  },
 };
 
-function TriggerNode({ data, selected }: NodeProps & { data: TriggerNodeData }) {
+function TriggerNode({ data, selected, id }: NodeProps & { data: TriggerNodeData }) {
   const [token, setToken] = useState(data.token || 'ADA');
   const [targetPrice, setTargetPrice] = useState(data.targetPrice || '');
+  const [cronExpression, setCronExpression] = useState(data.cronExpression || '0 * * * *');
+  const [minAmount, setMinAmount] = useState(data.minAmount || '');
+  const [tokenFilter, setTokenFilter] = useState(data.tokenFilter || '');
+  const [copied, setCopied] = useState(false);
   
   const config = triggerConfig[data.triggerType] || triggerConfig.manual;
   const Icon = config.icon;
   const isPriceTrigger = data.triggerType === 'price_gte' || data.triggerType === 'price_lte';
+  const isCronTrigger = data.triggerType === 'cron';
+  const isWalletReceiveTrigger = data.triggerType === 'wallet_receive';
+  const isWebhookTrigger = data.triggerType === 'webhook';
+
+  // Generate webhook URL based on node ID
+  const webhookUrl = `${window.location.origin}/api/webhooks/trigger/${id}`;
+
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Common cron presets
+  const cronPresets = [
+    { label: 'Every hour', value: '0 * * * *' },
+    { label: 'Every 6 hours', value: '0 */6 * * *' },
+    { label: 'Daily at midnight', value: '0 0 * * *' },
+    { label: 'Every Monday', value: '0 0 * * 1' },
+  ];
 
   return (
     <div
@@ -112,6 +162,111 @@ function TriggerNode({ data, selected }: NodeProps & { data: TriggerNodeData }) 
             <button className="px-3 py-1.5 rounded-lg bg-bioluminescent/20 border border-bioluminescent/40 text-bioluminescent text-xs hover:bg-bioluminescent/30 transition-colors">
               Click to Execute
             </button>
+          </div>
+        )}
+
+        {isCronTrigger && (
+          <div className="space-y-3">
+            {/* Cron Preset */}
+            <div>
+              <label className="text-xs text-sea-mist/60 block mb-1">Schedule Preset</label>
+              <select
+                value={cronExpression}
+                onChange={(e) => setCronExpression(e.target.value)}
+                className="w-full px-2 py-1.5 rounded-lg bg-abyss/50 border border-sea-mist/20 text-foam-white text-xs focus:outline-none focus:border-aqua-glow"
+              >
+                {cronPresets.map((preset) => (
+                  <option key={preset.value} value={preset.value}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Custom Cron Expression */}
+            <div>
+              <label className="text-xs text-sea-mist/60 block mb-1">
+                Cron Expression
+              </label>
+              <input
+                type="text"
+                value={cronExpression}
+                onChange={(e) => setCronExpression(e.target.value)}
+                placeholder="0 * * * *"
+                className="w-full px-2 py-1.5 rounded-lg bg-abyss/50 border border-sea-mist/20 text-foam-white text-xs font-mono focus:outline-none focus:border-aqua-glow"
+              />
+              <p className="text-[10px] text-sea-mist/40 mt-1">
+                Format: min hour day month weekday
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isWalletReceiveTrigger && (
+          <div className="space-y-3">
+            {/* Minimum Amount */}
+            <div>
+              <label className="text-xs text-sea-mist/60 block mb-1">
+                Minimum Amount (optional)
+              </label>
+              <input
+                type="number"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                placeholder="Any amount"
+                step="0.01"
+                className="w-full px-2 py-1.5 rounded-lg bg-abyss/50 border border-sea-mist/20 text-foam-white text-xs focus:outline-none focus:border-aqua-glow"
+              />
+            </div>
+            
+            {/* Token Filter */}
+            <div>
+              <label className="text-xs text-sea-mist/60 block mb-1">
+                Token Filter (optional)
+              </label>
+              <select
+                value={tokenFilter}
+                onChange={(e) => setTokenFilter(e.target.value)}
+                className="w-full px-2 py-1.5 rounded-lg bg-abyss/50 border border-sea-mist/20 text-foam-white text-xs focus:outline-none focus:border-aqua-glow"
+              >
+                <option value="">Any token</option>
+                <option value="ADA">ADA</option>
+                <option value="MIN">MIN</option>
+                <option value="SUNDAE">SUNDAE</option>
+                <option value="SNEK">SNEK</option>
+              </select>
+              <p className="text-[10px] text-sea-mist/40 mt-1">
+                Leave empty to trigger on any received token
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isWebhookTrigger && (
+          <div className="space-y-3">
+            {/* Webhook URL */}
+            <div>
+              <label className="text-xs text-sea-mist/60 block mb-1">
+                Webhook URL
+              </label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={webhookUrl}
+                  readOnly
+                  className="flex-1 px-2 py-1.5 rounded-lg bg-abyss/50 border border-sea-mist/20 text-foam-white text-[10px] font-mono focus:outline-none"
+                />
+                <button
+                  onClick={copyWebhookUrl}
+                  className="p-1.5 rounded-lg bg-abyss/50 border border-sea-mist/20 text-sea-mist hover:text-aqua-glow hover:border-aqua-glow/30 transition-colors"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-bioluminescent" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-sea-mist/40 mt-1">
+                POST to this URL to trigger the workflow
+              </p>
+            </div>
           </div>
         )}
       </div>
