@@ -18,7 +18,7 @@ router.get("/", authenticate, async (req, res) => {
   try {
     // req.user is already populated by authenticate middleware
     const user = req.user;
-
+    console.log(user);
     // Initialize UTXOs SDK
     const provider = new BlockfrostProvider(
       process.env.BLOCKFROST_API_KEY_PREPROD
@@ -51,11 +51,14 @@ router.get("/", authenticate, async (req, res) => {
     }
 
     // Create new developer wallet
-    const walletInfo = await sdk.wallet.createWallet();
+    const walletInfo = await sdk.wallet.createWallet({
+      tags: [user.firebaseUid],
+    });
 
     // Get the wallet details
-    const { info, wallet } = await sdk.wallet.getWallet(walletInfo.id, 0); // 0 for preprod
-
+    const RESULT = await sdk.wallet.getWallet(walletInfo.id, 0); // 0 for preprod
+    const { info, wallet } = RESULT;
+    console.log(RESULT);
     // Save to user
     user.developerWallet = {
       initialized: true,
