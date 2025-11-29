@@ -13,7 +13,6 @@ import {
   verifySignature,
   logout as apiLogout,
   initializeAuth,
-  getStoredUser,
   clearAuthData,
   getCurrentUser,
   getAccessToken,

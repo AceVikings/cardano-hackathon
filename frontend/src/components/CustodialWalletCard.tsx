@@ -4,6 +4,7 @@ import { useWallet } from '@meshsdk/react';
 import { 
   MeshTxBuilder,
   resolvePaymentKeyHash,
+  BlockfrostProvider,
 } from '@meshsdk/core';
 import { 
   Wallet, 
@@ -149,10 +150,9 @@ export default function CustodialWalletCard({ className = '' }: CustodialWalletC
       };
 
       // Build transaction
+      const blockfrost = new BlockfrostProvider('preprodTkz6j43OWTjf9kYQ2ajAeyIdV9pZTcI2');
       const txBuilder = new MeshTxBuilder({
-        fetcher: {
-          fetchUTxOs: async () => utxos,
-        },
+        fetcher: blockfrost,
       });
 
       const lovelaceAmount = BigInt(Math.floor(amount * 1_000_000));

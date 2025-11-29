@@ -50,7 +50,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { wallet, connected, connect, disconnect } = useWallet();
-  const { login, isAuthenticated, isLoading: authLoading, error: authError, clearError } = useAuth();
+  const { login, isAuthenticated, error: authError, clearError } = useAuth();
   
   const [availableWallets, setAvailableWallets] = useState<WalletInfo[]>([]);
   const [authStep, setAuthStep] = useState<'connect' | 'sign' | 'success' | 'error'>('connect');
