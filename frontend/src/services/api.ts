@@ -66,12 +66,27 @@ export interface DeveloperWallet {
   createdAt: string;
 }
 
+export interface WalletBalance {
+  lovelace: string;
+  ada: number;
+  tokens: Array<{ unit: string; quantity: string }>;
+  utxoCount: number;
+}
+
 /**
  * Get or create user's developer-controlled wallet
  */
 export async function getDeveloperWallet(): Promise<DeveloperWallet> {
   const response = await apiRequest<{ success: boolean; wallet: DeveloperWallet; message?: string }>('/wallet');
   return response.wallet;
+}
+
+/**
+ * Get the ADA balance of the user's developer wallet
+ */
+export async function getWalletBalance(): Promise<WalletBalance> {
+  const response = await apiRequest<{ success: boolean; balance: WalletBalance }>('/wallet/balance');
+  return response.balance;
 }
 
 // ============================================================================
@@ -192,13 +207,20 @@ export interface WorkflowNode {
   position: { x: number; y: number };
   data: {
     label: string;
+    // Trigger-specific fields
     triggerType?: string;
     triggerConfig?: Record<string, unknown>;
+    // Agent-specific fields
+    agentId?: string;
     agentType?: string;
     status?: 'active' | 'inactive' | 'configuring';
     description?: string;
-    inputParameters?: Array<{ name: string; type: string; description: string; value?: unknown }>;
+    invokeUrl?: string;
+    executionCost?: string;
+    inputParameters?: Array<{ name: string; type: string; description: string }>;
     output?: { name: string; type: string; description: string };
+    // User-configured input values
+    inputValues?: Record<string, { value: string; source: 'manual' | 'connection' }>;
   };
 }
 

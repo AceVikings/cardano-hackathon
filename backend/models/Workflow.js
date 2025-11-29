@@ -11,7 +11,12 @@ const inputParameterSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true },
   description: String,
-  value: mongoose.Schema.Types.Mixed, // Configured value for this parameter
+}, { _id: false });
+
+// Schema for configured input values
+const inputValueSchema = new mongoose.Schema({
+  value: String,
+  source: { type: String, enum: ['manual', 'connection'], default: 'manual' },
 }, { _id: false });
 
 // Schema for output
@@ -36,11 +41,16 @@ const nodeSchema = new mongoose.Schema({
     triggerType: String, // 'manual', 'price_gte', 'price_lte'
     triggerConfig: mongoose.Schema.Types.Mixed, // Trigger-specific config (e.g., target price)
     // For agents
-    agentType: String, // 'swap', 'transfer', etc.
+    agentId: String, // Agent identifier from the agents service
+    agentType: String, // 'swap', 'transfer', 'custom', etc.
     status: { type: String, enum: ['active', 'inactive', 'configuring'], default: 'configuring' },
     description: String,
+    invokeUrl: String, // API endpoint to invoke this agent
+    executionCost: String, // Cost to run this agent (e.g., "1 ADA")
     inputParameters: [inputParameterSchema],
     output: outputSchema,
+    // User-configured input values
+    inputValues: { type: Map, of: inputValueSchema },
   },
 }, { _id: false });
 

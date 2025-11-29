@@ -12,8 +12,10 @@ import {
   updateWorkflowStatus, 
   deleteWorkflow,
   getDeveloperWallet,
+  getWalletBalance,
   type WorkflowBasicInfo,
-  type DeveloperWallet
+  type DeveloperWallet,
+  type WalletBalance
 } from '../services/api';
 
 export default function DashboardPage() {
@@ -25,6 +27,8 @@ export default function DashboardPage() {
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
   const [wallet, setWallet] = useState<DeveloperWallet | null>(null);
   const [isLoadingWallet, setIsLoadingWallet] = useState(true);
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
   useEffect(() => {
     fetchWorkflows();
@@ -47,11 +51,26 @@ export default function DashboardPage() {
     try {
       const data = await getDeveloperWallet();
       setWallet(data);
+      // Fetch balance after getting wallet
+      fetchBalance();
     } catch (err) {
       console.error('Failed to fetch wallet:', err);
       // Don't show error toast - wallet will be created on first access
     } finally {
       setIsLoadingWallet(false);
+    }
+  };
+
+  const fetchBalance = async () => {
+    setIsLoadingBalance(true);
+    try {
+      const balance = await getWalletBalance();
+      setWalletBalance(balance);
+    } catch (err) {
+      console.error('Failed to fetch balance:', err);
+      // Balance might fail if wallet is new with no UTXOs
+    } finally {
+      setIsLoadingBalance(false);
     }
   };
 
@@ -200,11 +219,43 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sea-mist/60 text-xs">Network</p>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400">
-                Preprod
-              </span>
+            
+            {/* Balance and Network */}
+            <div className="flex items-center gap-6">
+              {/* Balance */}
+              <div className="text-right">
+                <p className="text-sea-mist/60 text-xs mb-1">Balance</p>
+                {isLoadingBalance ? (
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-3 h-3 text-aqua-glow animate-spin" />
+                    <span className="text-sm text-sea-mist">...</span>
+                  </div>
+                ) : walletBalance ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-foam-white font-mono">
+                      {walletBalance.ada.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-sm text-aqua-glow font-medium">ADA</span>
+                    <button
+                      onClick={fetchBalance}
+                      className="p-1 hover:bg-sea-mist/10 rounded transition-colors ml-1"
+                      title="Refresh balance"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-sea-mist/40 hover:text-aqua-glow" />
+                    </button>
+                  </div>
+                ) : wallet ? (
+                  <span className="text-sm text-sea-mist/50">0.00 ADA</span>
+                ) : null}
+              </div>
+              
+              {/* Network Badge */}
+              <div className="text-right">
+                <p className="text-sea-mist/60 text-xs mb-1">Network</p>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400">
+                  Preprod
+                </span>
+              </div>
             </div>
           </div>
         </motion.div>
