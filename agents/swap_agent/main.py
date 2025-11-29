@@ -65,6 +65,8 @@ class StartJobRequest(BaseModel):
 class ProvideInputRequest(BaseModel):
     job_id: str
 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CrewAI Task Execution
 # ─────────────────────────────────────────────────────────────────────────────
@@ -76,6 +78,9 @@ async def execute_crew_task(input_data: str) -> str:
     result = crew.crew.kickoff(inputs)
     logger.info("CrewAI task completed successfully")
     return result
+
+
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1) Start Job (MIP-003: /start_job)
@@ -174,7 +179,7 @@ async def handle_payment_status(job_id: str, payment_id: str) -> None:
         
         # Update job status to running
         jobs[job_id]["status"] = "running"
-        logger.info(f"Input data: {jobs[job_id]["input_data"]}")
+        logger.info(f"Input data: {jobs[job_id]['input_data']}")
 
         # Execute the AI task
         result = await execute_crew_task(jobs[job_id]["input_data"])
@@ -308,10 +313,14 @@ def main():
     print("🚀 Running CrewAI agents locally (standalone mode)...")
     print("=" * 70 + "\n")
     
-    # Define test input
-    input_data = {"text": "The impact of AI on the job market"}
+    # Define test input - intent and bearer_token are separate
+    input_data = {
+        "intent": "Swap 10 ADA to MIN tokens with 1% slippage",
+        "bearer_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjNzQ5NTFmNjBhMDE0NzE3ZjFlMzA4ZDZiMjgwZjQ4ZjFlODhmZGEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQW5zaHVtYW4gU2luZ2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS056S05yTVlQNTlEYklwVmJEeGppQ2pkcVRqd3dTWEFhUjJXc09iamFZdFZLTHVTYz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jYXJkYW5vLWhhY2thdGhvbi0zZWYxYSIsImF1ZCI6ImNhcmRhbm8taGFja2F0aG9uLTNlZjFhIiwiYXV0aF90aW1lIjoxNzY0NDUxNTk5LCJ1c2VyX2lkIjoiWENFSHB5UWZaNGd5M0x0dFB0QkhDaVZkRDVmMiIsInN1YiI6IlhDRUhweVFmWjRneTNMdHRQdEJIQ2lWZEQ1ZjIiLCJpYXQiOjE3NjQ0NTM4ODIsImV4cCI6MTc2NDQ1NzQ4MiwiZW1haWwiOiJhbnNodW1hbnNpbmdoNjRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDY1NzM2Mzc3MjQxMDI5MDgzNzciXSwiZW1haWwiOlsiYW5zaHVtYW5zaW5naDY0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.h0Ts_nLGU4fLvcE3BhcZrjCCFWKa8vkMZFdNfUoBRHt2DCMIf9ptncWb4TyAtZQnqAtfXJUT17mJ3qyzAjTITCtkGoYG28Fo1Po_u9b9wJ3nUcs6-NyxQsH72z6n6vhp9a5PoNjxuLcFr_0xHp4b7OaH_IupxmJ2tH0Y7QRiANvfO27u3XSElN1QVUVG7dLlgp9WeEx0eSFrTzUFy1iHr_OGJkwHeTqFwYv4qmIrowPLW0Yf43qi4Amiq67QwJ0KR4DJrf42i52FFsiNxqrjWZgFtQa7wCRsh8AjTNn0VC7sSBekrb7TTfVRxEj-4ExSSuxq-yRDSwbOqAOPmOM2Zg"
+    }
     
-    print(f"Input: {input_data['text']}")
+    print(f"Intent: {input_data['intent']}")
+    print(f"Bearer Token: {input_data['bearer_token'][:50]}...")
     print("\nProcessing with CrewAI agents...\n")
     
     # Initialize and run the crew

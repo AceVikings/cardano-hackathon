@@ -114,7 +114,9 @@ router.get("/balance", authenticate, async (req, res) => {
 
     for (const utxo of utxos) {
       // Add lovelace
-      const lovelaceAmount = utxo.output.amount.find(a => a.unit === "lovelace");
+      const lovelaceAmount = utxo.output.amount.find(
+        (a) => a.unit === "lovelace"
+      );
       if (lovelaceAmount) {
         totalLovelace += BigInt(lovelaceAmount.quantity);
       }
@@ -122,9 +124,11 @@ router.get("/balance", authenticate, async (req, res) => {
       // Collect tokens (non-ADA assets)
       for (const asset of utxo.output.amount) {
         if (asset.unit !== "lovelace") {
-          const existingToken = tokens.find(t => t.unit === asset.unit);
+          const existingToken = tokens.find((t) => t.unit === asset.unit);
           if (existingToken) {
-            existingToken.quantity = (BigInt(existingToken.quantity) + BigInt(asset.quantity)).toString();
+            existingToken.quantity = (
+              BigInt(existingToken.quantity) + BigInt(asset.quantity)
+            ).toString();
           } else {
             tokens.push({
               unit: asset.unit,
@@ -379,6 +383,149 @@ router.post("/update-balance", authenticate, async (req, res) => {
       success: false,
       error: "Failed to update balance",
     });
+  }
+});
+
+/**
+ * POST /api/wallet/sign-transaction
+ * Body: { unsignedTxHex }
+ * Signs an unsigned transaction using the user's developer-controlled wallet
+ * The implementation tries multiple signing entrypoints depending on the
+ * installed SDK (Web3Sdk wallet API or returned wallet object with signTx).
+ */
+router.post("/sign-transaction", authenticate, async (req, res) => {
+  try {
+    const { unsignedTxHex, submit } = req.body || {};
+    if (!unsignedTxHex || typeof unsignedTxHex !== "string") {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required field: unsignedTxHex (CBOR hex string)",
+      });
+    }
+
+    const user = req.user;
+    if (!user.developerWallet?.initialized) {
+      return res.status(400).json({
+        success: false,
+        error: "Developer wallet not initialized for this user",
+      });
+    }
+
+    // Initialize provider + SDK (same pattern as wallet creation)
+    const provider = new BlockfrostProvider(
+      process.env.BLOCKFROST_API_KEY_PREPROD
+    );
+    const sdk = new Web3Sdk({
+      projectId: process.env.UTXOS_PROJECT_ID,
+      apiKey: process.env.UTXOS_API_KEY,
+      privateKey: process.env.UTXOS_PRIVATE_KEY,
+      network: "preprod",
+      fetcher: provider,
+      submitter: provider,
+    });
+
+    const walletId = user.developerWallet.walletId;
+    let signedTxHex = null;
+
+    // Try Web3Sdk provided signing helper (wallet-scoped)
+    try {
+      if (sdk.wallet && typeof sdk.wallet.signTx === "function") {
+        // Common API: sdk.wallet.signTx(walletId, unsignedTxHex)
+        signedTxHex = await sdk.wallet.signTx(walletId, unsignedTxHex);
+      } else if (
+        sdk.wallet &&
+        typeof sdk.wallet.signTransaction === "function"
+      ) {
+        signedTxHex = await sdk.wallet.signTransaction(walletId, unsignedTxHex);
+      }
+    } catch (err) {
+      console.warn(
+        "sdk.wallet.signTx/signTransaction failed:",
+        err && err.message
+      );
+    }
+
+    // If SDK-level signing did not work, try getting wallet object and use its signTx
+    if (!signedTxHex) {
+      try {
+        const { info, wallet } = await sdk.wallet.getWallet(
+          walletId,
+          user.developerWallet.networkId || 0
+        );
+
+        if (wallet && typeof wallet.signTx === "function") {
+          // Mesh-style wallet object: wallet.signTx(unsignedTxHex, partialSign?)
+          signedTxHex = await wallet.signTx(unsignedTxHex, false);
+        }
+      } catch (err) {
+        console.warn(
+          "Fetching wallet object or wallet.signTx failed:",
+          err && err.message
+        );
+      }
+    }
+
+    if (!signedTxHex) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "Unable to sign transaction: no signing API available for the configured wallet provider.",
+        suggestion:
+          "Ensure the backend has a wallet capable of signing (UTXOS Web3Sdk with signing enabled) or use Mesh Wallets that expose signTx. Review SDK versions and credentials.",
+      });
+    }
+
+    // If requested, submit the signed transaction and return txHash
+    if (submit) {
+      try {
+        let txHash = null;
+
+        if (sdk.wallet && typeof sdk.wallet.submitTx === "function") {
+          txHash = await sdk.wallet.submitTx(walletId, signedTxHex);
+        }
+
+        if (!txHash) {
+          try {
+            const { info, wallet } = await sdk.wallet.getWallet(
+              walletId,
+              user.developerWallet.networkId || 0
+            );
+            if (wallet && typeof wallet.submitTx === "function") {
+              txHash = await wallet.submitTx(signedTxHex);
+            }
+          } catch (err) {
+            console.warn(
+              "wallet.submitTx fallback failed:",
+              err && err.message
+            );
+          }
+        }
+
+        if (!txHash) {
+          return res.status(500).json({
+            success: false,
+            error:
+              "Signing succeeded but submission failed: no submission API available.",
+          });
+        }
+
+        return res.json({ success: true, signedTxHex, txHash });
+      } catch (err) {
+        console.error("Transaction submission failed:", err);
+        return res.status(500).json({
+          success: false,
+          error: "Transaction submission failed",
+          details: err && err.message,
+        });
+      }
+    }
+
+    return res.json({ success: true, signedTxHex });
+  } catch (error) {
+    console.error("Sign transaction error:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to sign transaction" });
   }
 });
 
