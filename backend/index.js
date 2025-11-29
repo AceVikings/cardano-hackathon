@@ -81,6 +81,24 @@ app.get("/api/available-agents", (req, res) => {
         description: "The estimated amount of toToken received",
       },
     },
+    {
+      id: "conversation-agent",
+      name: "Conversation Agent",
+      description: "Agent for processing conversational input and generating responses",
+      invokeUrl: "/api/agents/conversation-agent/invoke",
+      inputParameters: [
+        {
+          name: "inputText",
+          type: "string",
+          description: "The input text for conversation processing",
+        },
+      ],
+      output: {
+        name: "outputText",
+        type: "string",
+        description: "The generated conversational response",
+      },
+    },
   ];
   res.json({ agents });
 });
