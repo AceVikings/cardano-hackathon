@@ -15,7 +15,7 @@ import {
 } from '@xyflow/react';
 import type { Connection, Edge, Node, Viewport } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Save, FolderOpen, Loader2, Power, Trash2, Rocket } from 'lucide-react';
+import { Save, FolderOpen, Loader2, Power, Trash2, Rocket, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import AgentNode from './AgentNode';
@@ -29,6 +29,7 @@ import {
   updateWorkflow,
   getWorkflowById,
   updateWorkflowStatus,
+  executeWorkflow as executeWorkflowApi,
   type WorkflowNode,
   type WorkflowEdge,
 } from '../../services/api';
@@ -72,6 +73,7 @@ function AgentEditorCanvas() {
   const [workflowDescription, setWorkflowDescription] = useState('');
   const [workflowStatus, setWorkflowStatus] = useState<'active' | 'inactive'>('inactive');
   const [isSaving, setIsSaving] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -305,6 +307,44 @@ function AgentEditorCanvas() {
     }
   };
 
+  const handleExecute = async () => {
+    if (!workflowId) {
+      error('Save first', 'Please save the workflow before executing it');
+      return;
+    }
+
+    // Check if there are agent nodes
+    const agentNodes = nodes.filter(n => n.type === 'agent');
+    if (agentNodes.length === 0) {
+      error('No agents', 'Add at least one agent to your workflow before executing');
+      return;
+    }
+
+    setIsExecuting(true);
+    try {
+      const result = await executeWorkflowApi(workflowId);
+      
+      if (result.status === 'success') {
+        success(
+          'Execution complete',
+          `${result.summary.successfulNodes}/${result.summary.totalNodes} nodes executed successfully`
+        );
+      } else if (result.status === 'partial') {
+        error(
+          'Partial execution',
+          `${result.summary.failedNodes} node(s) failed. Check logs for details.`
+        );
+      } else {
+        error('Execution failed', 'The workflow failed to execute');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to execute workflow';
+      error('Execution failed', message);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   const onConnect = useCallback(
     (connection: Connection) => {
       const sourceHandle = connection.sourceHandle || '';
@@ -410,23 +450,24 @@ function AgentEditorCanvas() {
           {hasUnsavedChanges && (
             <span className="text-xs text-sea-mist/50">Unsaved changes</span>
           )}
-          
-          {/* Workflow Cost Estimate */}
-          {workflowCost.agentCount > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-current-blue/10 border border-current-blue/20">
-              <span className="text-xs text-sea-mist/60">Est. Cost:</span>
-              <span className="text-sm font-mono text-aqua-glow font-medium">
-                {workflowCost.total.toFixed(2)} ADA
-              </span>
-              <div className="hidden md:flex items-center gap-1 text-[10px] text-sea-mist/40">
-                <span>({workflowCost.agentCount} agent{workflowCost.agentCount !== 1 ? 's' : ''}</span>
-                <span>+ ~{workflowCost.gasCost.toFixed(2)} gas)</span>
-              </div>
-            </div>
-          )}
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Workflow Cost Estimate */}
+          {workflowCost.agentCount > 0 && (
+            <div className="flex items-center gap-1.5 px-2 py-1 text-sea-mist/70 text-xs">
+              <span className="text-sea-mist/50">~</span>
+              <span className="font-mono text-aqua-glow/80">
+                {workflowCost.total.toFixed(2)} ADA
+              </span>
+              <span className="text-sea-mist/40 hidden sm:inline">
+                ({workflowCost.agentCount} agent{workflowCost.agentCount !== 1 ? 's' : ''})
+              </span>
+            </div>
+          )}
+          
+          <div className="w-px h-5 bg-sea-mist/10 hidden sm:block" />
+
           {/* My Workflows */}
           <motion.button
             onClick={() => navigate('/dashboard')}
@@ -469,6 +510,26 @@ function AgentEditorCanvas() {
               <Save className="w-4 h-4" />
             )}
             <span className="hidden sm:inline">{workflowId ? 'Save' : 'Save'}</span>
+          </motion.button>
+
+          {/* Run / Execute */}
+          <motion.button
+            onClick={handleExecute}
+            disabled={!workflowId || isExecuting}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              !workflowId || isExecuting
+                ? 'bg-sea-mist/10 text-sea-mist/50 cursor-not-allowed'
+                : 'bg-bioluminescent/20 text-bioluminescent hover:bg-bioluminescent/30 border border-bioluminescent/30'
+            }`}
+            whileHover={workflowId && !isExecuting ? { scale: 1.02 } : {}}
+            whileTap={workflowId && !isExecuting ? { scale: 0.98 } : {}}
+          >
+            {isExecuting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Play className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">Run</span>
           </motion.button>
 
           {/* Status Toggle / Deploy */}

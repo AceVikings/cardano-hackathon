@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Workflow = require('../models/Workflow');
 const { authenticate } = require('../middleware/auth');
+const { executeWorkflow, validateWorkflow, TriggerType } = require('../services/workflowExecutor');
 
 // All routes require authentication
 router.use(authenticate);
@@ -377,6 +378,102 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to delete workflow',
+    });
+  }
+});
+
+// ============================================================================
+// POST /api/workflows/:id/execute - Execute workflow manually
+// ============================================================================
+router.post('/:id/execute', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { triggerData = {} } = req.body;
+
+    // Validate workflow first
+    const validation = await validateWorkflow(id, { userId: req.user._id });
+    
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: validation.error,
+      });
+    }
+
+    // Execute the workflow
+    const result = await executeWorkflow(
+      id,
+      TriggerType.MANUAL,
+      triggerData,
+      { userId: req.user._id }
+    );
+
+    res.json({
+      success: true,
+      execution: result,
+    });
+  } catch (error) {
+    console.error('Error executing workflow:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid workflow ID',
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to execute workflow',
+    });
+  }
+});
+
+// ============================================================================
+// POST /api/workflows/:id/validate - Validate workflow without executing
+// ============================================================================
+router.post('/:id/validate', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const validation = await validateWorkflow(id, { userId: req.user._id });
+    
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        error: validation.error,
+      });
+    }
+
+    // Return basic workflow info with validation result
+    const workflow = validation.workflow;
+    
+    res.json({
+      success: true,
+      valid: true,
+      workflow: {
+        id: workflow._id,
+        name: workflow.name,
+        status: workflow.status,
+        nodeCount: workflow.nodes?.length || 0,
+        agentCount: workflow.nodes?.filter(n => n.type === 'agent').length || 0,
+        triggerType: workflow.nodes?.find(n => n.type === 'trigger')?.data?.triggerType,
+      },
+    });
+  } catch (error) {
+    console.error('Error validating workflow:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid workflow ID',
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Failed to validate workflow',
     });
   }
 });

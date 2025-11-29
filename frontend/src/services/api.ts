@@ -398,4 +398,87 @@ export async function deleteWorkflow(id: string): Promise<void> {
   );
 }
 
+// ============================================================================
+// Workflow Execution API
+// ============================================================================
+
+export interface ExecutionNodeResult {
+  nodeId: string;
+  nodeType: 'trigger' | 'agent';
+  label: string;
+  status: 'pending' | 'running' | 'success' | 'failed' | 'partial';
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  output?: Record<string, unknown>;
+  error?: string;
+}
+
+export interface ExecutionResult {
+  executionId: string;
+  workflowId: string;
+  workflowName: string;
+  triggerType: string;
+  triggerData?: Record<string, unknown>;
+  status: 'pending' | 'running' | 'success' | 'failed' | 'partial';
+  nodeResults: ExecutionNodeResult[];
+  summary: {
+    totalNodes: number;
+    successfulNodes: number;
+    failedNodes: number;
+  };
+  timing: {
+    startTime: string;
+    endTime: string;
+    duration: number;
+  };
+}
+
+export interface WorkflowValidation {
+  valid: boolean;
+  error?: string;
+  workflow?: {
+    id: string;
+    name: string;
+    status: 'active' | 'inactive';
+    nodeCount: number;
+    agentCount: number;
+    triggerType?: string;
+  };
+}
+
+/**
+ * Execute a workflow manually
+ */
+export async function executeWorkflow(
+  id: string, 
+  triggerData?: Record<string, unknown>
+): Promise<ExecutionResult> {
+  const response = await apiRequest<{ success: boolean; execution: ExecutionResult }>(
+    `/workflows/${id}/execute`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ triggerData }),
+    }
+  );
+  return response.execution;
+}
+
+/**
+ * Validate a workflow without executing it
+ */
+export async function validateWorkflow(id: string): Promise<WorkflowValidation> {
+  const response = await apiRequest<{ success: boolean; valid: boolean; error?: string; workflow?: WorkflowValidation['workflow'] }>(
+    `/workflows/${id}/validate`,
+    {
+      method: 'POST',
+    }
+  );
+  return {
+    valid: response.valid,
+    error: response.error,
+    workflow: response.workflow,
+  };
+}
+
 export { apiRequest };
