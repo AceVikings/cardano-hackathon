@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@meshsdk/react';
-import { LogOut, Settings, Bot, TrendingUp, Shield, Zap, RefreshCw, Workflow, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { LogOut, Settings, Zap, RefreshCw, Workflow, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CustodialWalletCard from '../components/CustodialWalletCard';
 import WalletBalances from '../components/WalletBalances';
@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const { user, logout, isLoading } = useAuth();
   const [walletAddress, setWalletAddress] = useState<string>('');
 
-  // Get wallet address when connected
+  // Get wallet address when connected (from Cardano wallet, not auth user)
   useEffect(() => {
     const getAddress = async () => {
       if (connected && wallet) {
@@ -25,13 +25,16 @@ export default function DashboardPage() {
         } catch (err) {
           console.error('Failed to get address:', err);
         }
-      } else if (user?.walletAddress) {
-        // Fall back to stored wallet address
-        setWalletAddress(user.walletAddress);
       }
     };
     getAddress();
-  }, [connected, wallet, user]);
+  }, [connected, wallet]);
+
+  const getUserDisplayName = () => {
+    if (user?.displayName) return user.displayName;
+    if (user?.email) return user.email.split('@')[0];
+    return 'User';
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -61,11 +64,18 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-12">
           <div>
             <h1 className="text-3xl font-bold text-foam-white font-heading mb-2">
-              Welcome to AdaFlow
+              Welcome, {getUserDisplayName()}
             </h1>
-            <p className="text-sea-mist">
-              Wallet: <span className="font-mono text-aqua-glow">{walletAddress ? truncateAddress(walletAddress) : ''}</span>
-            </p>
+            {walletAddress && (
+              <p className="text-sea-mist">
+                Wallet: <span className="font-mono text-aqua-glow">{truncateAddress(walletAddress)}</span>
+              </p>
+            )}
+            {user?.email && (
+              <p className="text-sea-mist/60 text-sm">
+                {user.email}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <motion.button
@@ -173,40 +183,6 @@ export default function DashboardPage() {
                 <p className="text-sm text-sea-mist/40">Your agent executions will appear here</p>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Active Agents */}
-        <div className="mb-12">
-          <h2 className="text-xl font-bold text-foam-white font-heading mb-6">Your Active Agents</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { name: 'Swap Agent', icon: Zap, status: 'Active', gradient: 'from-current-blue to-aqua-glow' },
-              { name: 'Yield Agent', icon: TrendingUp, status: 'Active', gradient: 'from-aqua-glow to-seafoam' },
-              { name: 'Risk Guard', icon: Shield, status: 'Monitoring', gradient: 'from-bioluminescent to-emerald-500' },
-              { name: 'Add Agent', icon: Bot, status: 'Configure', gradient: 'from-sea-mist/30 to-sea-mist/10' },
-            ].map((agent, index) => {
-              const Icon = agent.icon;
-              const isAddCard = agent.name === 'Add Agent';
-              return (
-                <motion.div
-                  key={agent.name}
-                  className={`glass-card p-6 cursor-pointer ${isAddCard ? 'border-dashed' : ''}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                >
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${agent.gradient} flex items-center justify-center mb-4`}>
-                    <Icon className="w-6 h-6 text-foam-white" />
-                  </div>
-                  <h3 className="font-bold text-foam-white mb-1">{agent.name}</h3>
-                  <p className={`text-sm ${isAddCard ? 'text-sea-mist/40' : 'text-bioluminescent'}`}>
-                    {agent.status}
-                  </p>
-                </motion.div>
-              );
-            })}
           </div>
         </div>
 

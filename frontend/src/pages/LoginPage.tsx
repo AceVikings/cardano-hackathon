@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useWallet } from '@meshsdk/react';
-import { BrowserWallet } from '@meshsdk/core';
 import { useAuth } from '../context/AuthContext';
 
 // Bubble background component
@@ -39,26 +37,32 @@ function BubbleBackground() {
   );
 }
 
-// Available wallet type
-interface WalletInfo {
-  id: string;
-  name: string;
-  icon: string;
+// Google Icon Component
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
 }
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { wallet, connected, connect, disconnect } = useWallet();
-  const { login, isAuthenticated, error: authError, clearError } = useAuth();
+  const { signIn, signUp, signInWithGoogle, isAuthenticated, isLoading, error: authError, clearError } = useAuth();
   
-  const [availableWallets, setAvailableWallets] = useState<WalletInfo[]>([]);
-  const [authStep, setAuthStep] = useState<'connect' | 'sign' | 'success' | 'error'>('connect');
-  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isSigning, setIsSigning] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [walletAddress, setWalletAddress] = useState<string>('');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [authStep, setAuthStep] = useState<'form' | 'success' | 'error'>('form');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -68,103 +72,101 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, navigate, location]);
 
-  // Fetch available wallets on mount
-  useEffect(() => {
-    const getWallets = async () => {
-      const wallets = await BrowserWallet.getAvailableWallets();
-      setAvailableWallets(wallets);
-    };
-    getWallets();
-  }, []);
-
-  // Get wallet address when connected
-  useEffect(() => {
-    const getAddress = async () => {
-      if (connected && wallet) {
-        try {
-          const addresses = await wallet.getUsedAddresses();
-          if (addresses.length > 0) {
-            setWalletAddress(addresses[0]);
-          }
-        } catch (err) {
-          console.error('Failed to get address:', err);
-        }
-      }
-    };
-    getAddress();
-  }, [connected, wallet]);
-
   // Handle auth errors
   useEffect(() => {
     if (authError) {
-      setErrorMessage(authError);
+      setLocalError(authError);
       setAuthStep('error');
     }
   }, [authError]);
 
-  // Default wallet icons for common wallets
-  const defaultWalletIcons: Record<string, string> = {
-    eternl: '🔷',
-    nami: '🌊',
-    flint: '🔥',
-    yoroi: '📘',
-    typhon: '🌪️',
-    gerowallet: '🦊',
-    nufi: '✨',
-  };
-
-  const handleWalletConnect = async (walletId: string) => {
-    setSelectedWallet(walletId);
-    setIsConnecting(true);
-    clearError();
-    try {
-      await connect(walletId);
-      // Store the connected wallet for auto-reconnect
-      localStorage.setItem('adaflow_connected_wallet', walletId);
-      setAuthStep('sign');
-    } catch {
-      setErrorMessage('Failed to connect wallet. Please try again.');
-      setAuthStep('error');
-    } finally {
-      setIsConnecting(false);
+  const validateForm = (): boolean => {
+    setLocalError(null);
+    
+    if (!email.trim()) {
+      setLocalError('Email is required');
+      return false;
     }
+    
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setLocalError('Please enter a valid email address');
+      return false;
+    }
+    
+    if (!password) {
+      setLocalError('Password is required');
+      return false;
+    }
+    
+    if (password.length < 6) {
+      setLocalError('Password must be at least 6 characters');
+      return false;
+    }
+    
+    if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setLocalError('Passwords do not match');
+        return false;
+      }
+    }
+    
+    return true;
   };
 
-  const handleSignature = async () => {
-    if (!wallet) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setIsSigning(true);
+    if (!validateForm()) return;
+    
     clearError();
+    setLocalError(null);
     
     try {
-      // Use the auth context login which handles nonce, signature, and token storage
-      await login();
-      
+      if (mode === 'signin') {
+        await signIn(email, password);
+      } else {
+        await signUp(email, password, displayName || undefined);
+      }
       setAuthStep('success');
       setTimeout(() => {
         const from = (location.state as any)?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }, 1500);
     } catch (err: any) {
-      console.error('Sign error:', err);
-      setErrorMessage(err.message || err.error || 'Failed to sign message. Please try again.');
+      setLocalError(err.message || 'Authentication failed');
       setAuthStep('error');
-    } finally {
-      setIsSigning(false);
     }
   };
 
-  const resetAuth = () => {
-    disconnect();
-    setAuthStep('connect');
-    setSelectedWallet(null);
-    setErrorMessage('');
-    setWalletAddress('');
+  const handleGoogleSignIn = async () => {
+    clearError();
+    setLocalError(null);
+    
+    try {
+      await signInWithGoogle();
+      setAuthStep('success');
+      setTimeout(() => {
+        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }, 1500);
+    } catch (err: any) {
+      setLocalError(err.message || 'Google sign-in failed');
+      setAuthStep('error');
+    }
+  };
+
+  const resetForm = () => {
+    setAuthStep('form');
+    setLocalError(null);
     clearError();
   };
 
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 12)}...${address.slice(-8)}`;
+  const toggleMode = () => {
+    setMode(mode === 'signin' ? 'signup' : 'signin');
+    setLocalError(null);
+    clearError();
+    setPassword('');
+    setConfirmPassword('');
   };
 
   return (
@@ -223,10 +225,10 @@ export default function LoginPage() {
           />
 
           <AnimatePresence mode="wait">
-            {/* Connect Wallet Step */}
-            {authStep === 'connect' && (
+            {/* Form Step */}
+            {authStep === 'form' && (
               <motion.div
-                key="connect"
+                key="form"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
@@ -238,137 +240,166 @@ export default function LoginPage() {
                     animate={{ rotate: [0, 5, -5, 0] }}
                     transition={{ duration: 4, repeat: Infinity }}
                   >
-                    <Wallet className="w-8 h-8 text-foam-white" />
+                    <Mail className="w-8 h-8 text-foam-white" />
                   </motion.div>
                   <h1 className="text-2xl font-bold text-foam-white font-heading mb-2">
-                    Welcome Back
+                    {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
                   </h1>
                   <p className="text-sea-mist/70 text-sm">
-                    Connect your wallet to access your AI agents
+                    {mode === 'signin' 
+                      ? 'Sign in to access your AI agents' 
+                      : 'Sign up to start building AI agents'}
                   </p>
                 </div>
 
-                {/* Wallet Options */}
-                <div className="space-y-3">
-                  {availableWallets.length > 0 ? (
-                    availableWallets.map((wallet) => (
-                      <motion.button
-                        key={wallet.id}
-                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-abyss/50 border border-current-blue/20 hover:bg-current-blue/10 hover:border-aqua-glow/30 transition-all group"
-                        whileHover={{ scale: 1.02, x: 5 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleWalletConnect(wallet.id)}
-                        disabled={isConnecting}
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-foam-white/10 flex items-center justify-center overflow-hidden">
-                          {wallet.icon ? (
-                            <img src={wallet.icon} alt={wallet.name} className="w-6 h-6" />
-                          ) : (
-                            <span className="text-lg">{defaultWalletIcons[wallet.id.toLowerCase()] || '💳'}</span>
-                          )}
-                        </div>
-                        <span className="flex-1 text-left text-foam-white font-medium">
-                          {wallet.name}
-                        </span>
-                        {isConnecting && selectedWallet === wallet.id ? (
-                          <Loader2 className="w-5 h-5 text-aqua-glow animate-spin" />
-                        ) : (
-                          <ArrowRight className="w-5 h-5 text-sea-mist/40 group-hover:text-aqua-glow transition-colors" />
-                        )}
-                      </motion.button>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sea-mist/60 text-sm mb-4">
-                        No Cardano wallets detected
-                      </p>
-                      <a
-                        href="https://eternl.io"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-aqua-glow hover:underline text-sm"
-                      >
-                        Install Eternl Wallet →
-                      </a>
+                {/* Error Message */}
+                {localError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-3 rounded-xl bg-coral/10 border border-coral/30 flex items-center gap-2"
+                  >
+                    <AlertCircle className="w-4 h-4 text-coral flex-shrink-0" />
+                    <p className="text-sm text-coral">{localError}</p>
+                  </motion.div>
+                )}
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Display Name (signup only) */}
+                  {mode === 'signup' && (
+                    <div>
+                      <label className="block text-sm text-sea-mist/70 mb-2">Display Name (optional)</label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-sea-mist/40" />
+                        <input
+                          type="text"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="Your name"
+                          className="w-full pl-11 pr-4 py-3 rounded-xl bg-abyss/50 border border-current-blue/20 text-foam-white placeholder:text-sea-mist/30 focus:outline-none focus:border-aqua-glow/50 transition-colors"
+                        />
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {/* Info */}
-                <p className="text-center text-xs text-sea-mist/40 mt-6">
-                  By connecting, you agree to our Terms of Service
-                </p>
-              </motion.div>
-            )}
-
-            {/* Sign Message Step */}
-            {authStep === 'sign' && (
-              <motion.div
-                key="sign"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="text-center mb-8">
-                  <motion.div
-                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-aqua-glow to-bioluminescent flex items-center justify-center mx-auto mb-4"
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <CheckCircle className="w-8 h-8 text-foam-white" />
-                  </motion.div>
-                  <h1 className="text-2xl font-bold text-foam-white font-heading mb-2">
-                    Verify Ownership
-                  </h1>
-                  <p className="text-sea-mist/70 text-sm">
-                    Sign a message to prove wallet ownership
-                  </p>
-                </div>
-
-                {/* Connected Wallet Info */}
-                <div className="p-4 rounded-xl bg-abyss/50 border border-bioluminescent/20 mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-bioluminescent/20 flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-bioluminescent" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-sea-mist/60">Connected Wallet</p>
-                      <p className="text-sm text-foam-white font-mono">
-                        {walletAddress ? truncateAddress(walletAddress) : 'Loading...'}
-                      </p>
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm text-sea-mist/70 mb-2">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-sea-mist/40" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full pl-11 pr-4 py-3 rounded-xl bg-abyss/50 border border-current-blue/20 text-foam-white placeholder:text-sea-mist/30 focus:outline-none focus:border-aqua-glow/50 transition-colors"
+                        required
+                      />
                     </div>
                   </div>
+
+                  {/* Password */}
+                  <div>
+                    <label className="block text-sm text-sea-mist/70 mb-2">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-sea-mist/40" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-11 pr-12 py-3 rounded-xl bg-abyss/50 border border-current-blue/20 text-foam-white placeholder:text-sea-mist/30 focus:outline-none focus:border-aqua-glow/50 transition-colors"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-sea-mist/40 hover:text-foam-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password (signup only) */}
+                  {mode === 'signup' && (
+                    <div>
+                      <label className="block text-sm text-sea-mist/70 mb-2">Confirm Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-sea-mist/40" />
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-11 pr-12 py-3 rounded-xl bg-abyss/50 border border-current-blue/20 text-foam-white placeholder:text-sea-mist/30 focus:outline-none focus:border-aqua-glow/50 transition-colors"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-sea-mist/40 hover:text-foam-white transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <motion.button
+                    type="submit"
+                    className="w-full liquid-btn py-4 flex items-center justify-center gap-2 bg-gradient-to-br from-current-blue to-aqua-glow text-foam-white font-heading font-semibold rounded-xl"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{mode === 'signin' ? 'Signing in...' : 'Creating account...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{mode === 'signin' ? 'Sign In' : 'Create Account'}</span>
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </motion.button>
+                </form>
+
+                {/* Divider */}
+                <div className="flex items-center gap-4 my-6">
+                  <div className="flex-1 h-px bg-current-blue/20" />
+                  <span className="text-sm text-sea-mist/40">or</span>
+                  <div className="flex-1 h-px bg-current-blue/20" />
                 </div>
 
-                {/* Sign Button */}
+                {/* Google Sign In */}
                 <motion.button
-                  className="w-full liquid-btn py-4 flex items-center justify-center gap-2 bg-gradient-to-br from-current-blue to-aqua-glow text-foam-white font-heading font-semibold rounded-xl"
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-foam-white/5 border border-current-blue/20 hover:bg-foam-white/10 hover:border-aqua-glow/30 transition-all"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={handleSignature}
-                  disabled={isSigning}
+                  disabled={isLoading}
                 >
-                  {isSigning ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Waiting for signature...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Sign Message</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </>
-                  )}
+                  <GoogleIcon className="w-5 h-5" />
+                  <span className="text-foam-white font-medium">Continue with Google</span>
                 </motion.button>
 
-                {/* Back Button */}
-                <button
-                  className="w-full mt-4 text-sm text-sea-mist/60 hover:text-foam-white transition-colors"
-                  onClick={resetAuth}
-                >
-                  Use a different wallet
-                </button>
+                {/* Toggle Mode */}
+                <p className="text-center text-sm text-sea-mist/60 mt-6">
+                  {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+                  <button
+                    type="button"
+                    onClick={toggleMode}
+                    className="text-aqua-glow hover:underline"
+                  >
+                    {mode === 'signin' ? 'Sign up' : 'Sign in'}
+                  </button>
+                </p>
               </motion.div>
             )}
 
@@ -422,13 +453,13 @@ export default function LoginPage() {
                   Authentication Failed
                 </h1>
                 <p className="text-sea-mist/70 text-sm mb-6">
-                  {errorMessage}
+                  {localError || authError || 'An error occurred'}
                 </p>
                 <motion.button
                   className="liquid-btn py-3 px-8 bg-gradient-to-br from-current-blue to-aqua-glow text-foam-white font-heading font-semibold rounded-xl"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={resetAuth}
+                  onClick={resetForm}
                 >
                   Try Again
                 </motion.button>

@@ -51,14 +51,29 @@ function AgentEditorCanvas() {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      // Create custom edge styling
+      // Validate handle type compatibility
+      const sourceHandle = connection.sourceHandle || '';
+      const targetHandle = connection.targetHandle || '';
+      
+      // Check if connection types match (trigger-to-trigger or data-to-data)
+      const sourceIsTrigger = sourceHandle.includes('trigger');
+      const targetIsTrigger = targetHandle.includes('trigger');
+      
+      if (sourceIsTrigger !== targetIsTrigger) {
+        // Mismatched connection types - don't allow
+        console.warn('Cannot connect trigger handle to data handle');
+        return;
+      }
+
+      // Create custom edge styling based on connection type
+      const isTriggerEdge = sourceIsTrigger;
       const edge: Edge = {
         ...connection,
-        id: `edge-${connection.source}-${connection.target}`,
+        id: `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}`,
         type: 'smoothstep',
-        animated: true,
+        animated: isTriggerEdge,
         style: {
-          stroke: '#22d3ee',
+          stroke: isTriggerEdge ? '#4ade80' : '#22d3ee', // green for trigger, cyan for data
           strokeWidth: 2,
         },
       };

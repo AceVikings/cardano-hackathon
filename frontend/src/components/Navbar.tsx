@@ -29,8 +29,10 @@ export default function Navbar() {
 
   const isLandingPage = location.pathname === '/';
 
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const getUserDisplayName = () => {
+    if (user?.displayName) return user.displayName;
+    if (user?.email) return user.email.split('@')[0];
+    return 'User';
   };
 
   const handleLogout = async () => {
@@ -101,7 +103,7 @@ export default function Navbar() {
                     <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-current-blue to-aqua-glow flex items-center justify-center">
                       <User className="w-4 h-4 text-foam-white" />
                     </div>
-                    <span className="text-sm font-mono">{truncateAddress(user.walletAddress)}</span>
+                    <span className="text-sm">{getUserDisplayName()}</span>
                   </motion.button>
                   
                   {/* User Dropdown Menu */}
@@ -217,7 +219,7 @@ export default function Navbar() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-current-blue to-aqua-glow flex items-center justify-center">
                         <User className="w-4 h-4 text-foam-white" />
                       </div>
-                      <span className="text-sm font-mono text-sea-mist">{truncateAddress(user.walletAddress)}</span>
+                      <span className="text-sm text-sea-mist">{getUserDisplayName()}</span>
                     </div>
                     <button
                       className="w-full py-3 font-heading font-semibold text-sm uppercase tracking-wider text-foam-white bg-gradient-to-br from-current-blue to-aqua-glow rounded-xl cursor-pointer transition-all duration-300"

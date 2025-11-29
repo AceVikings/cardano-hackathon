@@ -1,6 +1,7 @@
 /**
  * AdaFlow - User Withdraw Script
  * User withdraws all their funds (ADA + tokens) from the custodial wallet
+ * Finds the user's UTXO by matching datum owner to user's PKH
  */
 
 import 'dotenv/config';
@@ -51,10 +52,30 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`   Found ${scriptUtxos.length} UTXO(s)`);
+  console.log(`   Found ${scriptUtxos.length} UTXO(s) at script address`);
 
-  // Use the first UTXO (in production, would filter by owner)
-  const targetUtxo = scriptUtxos[0];
+  // Find the UTXO belonging to this user by checking datum owner
+  let targetUtxo = null;
+  for (const utxo of scriptUtxos) {
+    const plutusData = utxo.output?.plutusData;
+    if (typeof plutusData === 'string') {
+      // Parse the CBOR to extract owner PKH
+      // Format: d8799f581c<pkh>... 
+      const pkhMatch = plutusData.match(/d8799f581c([a-f0-9]{56})/i);
+      if (pkhMatch && pkhMatch[1] === userPkh) {
+        targetUtxo = utxo;
+        console.log(`   ✓ Found user's UTXO: ${utxo.input.txHash}#${utxo.input.outputIndex}`);
+        break;
+      }
+    }
+  }
+
+  if (!targetUtxo) {
+    console.error('❌ No UTXO found belonging to this user.');
+    console.error(`   User PKH: ${userPkh}`);
+    process.exit(1);
+  }
+
   const utxoAmounts: Asset[] = targetUtxo.output.amount;
   
   const inputLovelace = BigInt(
@@ -62,13 +83,11 @@ async function main() {
   );
   const tokens = utxoAmounts.filter((a: Asset) => a.unit !== 'lovelace');
 
-  console.log(`   Target UTXO: ${targetUtxo.input.txHash}#${targetUtxo.input.outputIndex}`);
   console.log(`   ADA to Withdraw: ${lovelaceToAda(inputLovelace)} ADA`);
   
   if (tokens.length > 0) {
     console.log(`   Tokens to Withdraw: ${tokens.length} asset(s)`);
     for (const token of tokens) {
-      // Token unit format: policyId + assetName (hex)
       const policyId = token.unit.slice(0, 56);
       const assetName = token.unit.slice(56);
       const assetNameStr = assetName ? Buffer.from(assetName, 'hex').toString('utf8') : '(no name)';

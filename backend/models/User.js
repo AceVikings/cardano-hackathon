@@ -1,43 +1,38 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  walletAddress: {
+  // Firebase UID - primary identifier
+  firebaseUid: {
     type: String,
     required: true,
     unique: true,
     index: true,
   },
-  stakeAddress: {
+  // Firebase user data
+  email: {
     type: String,
+    sparse: true,
     index: true,
   },
-  nonce: {
+  displayName: String,
+  photoURL: String,
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  authProvider: {
     type: String,
-    required: true,
+    enum: ['password', 'google.com', 'unknown'],
+    default: 'unknown',
   },
-  refreshTokens: [{
-    token: String,
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    expiresAt: Date,
-    userAgent: String,
-  }],
-  profile: {
-    displayName: String,
-    avatar: String,
-  },
+  // User settings
   settings: {
     notifications: {
       type: Boolean,
       default: true,
     },
-    twoFactorEnabled: {
-      type: Boolean,
-      default: false,
-    },
   },
+  // Timestamps
   lastLogin: Date,
   createdAt: {
     type: Date,
@@ -56,7 +51,7 @@ const userSchema = new mongoose.Schema({
     },
     // The script address where user's funds are held
     scriptAddress: String,
-    // User's payment key hash (derived from wallet)
+    // User's payment key hash (derived from connected Cardano wallet)
     ownerPkh: String,
     // List of approved agent PKHs
     approvedAgents: [{
@@ -88,26 +83,23 @@ userSchema.pre('save', function() {
   this.updatedAt = new Date();
 });
 
-// Generate a random nonce for wallet signature
-userSchema.methods.generateNonce = function() {
-  this.nonce = `AdaFlow Authentication: ${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-  return this.nonce;
-};
+// Virtual for formatted user data
+userSchema.virtual('formattedUser').get(function() {
+  return {
+    id: this._id,
+    firebaseUid: this.firebaseUid,
+    email: this.email,
+    displayName: this.displayName,
+    photoURL: this.photoURL,
+    emailVerified: this.emailVerified,
+    authProvider: this.authProvider,
+    createdAt: this.createdAt,
+    lastLogin: this.lastLogin,
+  };
+});
 
-// Clean up expired refresh tokens
-userSchema.methods.cleanupExpiredTokens = function() {
-  const now = new Date();
-  this.refreshTokens = this.refreshTokens.filter(rt => rt.expiresAt > now);
-};
-
-// Revoke a specific refresh token
-userSchema.methods.revokeToken = function(token) {
-  this.refreshTokens = this.refreshTokens.filter(rt => rt.token !== token);
-};
-
-// Revoke all refresh tokens (logout from all devices)
-userSchema.methods.revokeAllTokens = function() {
-  this.refreshTokens = [];
-};
+// Ensure virtuals are included in JSON
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('User', userSchema);

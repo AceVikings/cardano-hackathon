@@ -1,9 +1,10 @@
-const { verifyAccessToken } = require('../utils/jwt');
+const { verifyIdToken } = require('../config/firebase');
 const User = require('../models/User');
 
 /**
- * Authentication middleware
- * Verifies JWT token from Authorization header
+ * Firebase Authentication middleware
+ * Verifies Firebase ID token from Authorization header
+ * Creates user in database if they don't exist
  */
 async function authenticate(req, res, next) {
   try {
@@ -17,10 +18,14 @@ async function authenticate(req, res, next) {
       });
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyAccessToken(token);
-
-    if (!decoded) {
+    const idToken = authHeader.split(' ')[1];
+    
+    // Verify Firebase ID token
+    let decodedToken;
+    try {
+      decodedToken = await verifyIdToken(idToken);
+    } catch (error) {
+      console.error('Token verification failed:', error.message);
       return res.status(401).json({
         success: false,
         error: 'Invalid or expired token',
@@ -28,21 +33,53 @@ async function authenticate(req, res, next) {
       });
     }
 
-    // Fetch user from database
-    const user = await User.findById(decoded.userId).select('-refreshTokens');
+    // Find or create user in database
+    let user = await User.findOne({ firebaseUid: decodedToken.uid });
     
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'User not found',
-        code: 'USER_NOT_FOUND',
+      // Create new user from Firebase data
+      user = new User({
+        firebaseUid: decodedToken.uid,
+        email: decodedToken.email || null,
+        displayName: decodedToken.name || decodedToken.email?.split('@')[0] || null,
+        photoURL: decodedToken.picture || null,
+        emailVerified: decodedToken.email_verified || false,
+        authProvider: decodedToken.firebase?.sign_in_provider || 'unknown',
       });
+      
+      await user.save();
+      console.log('Created new user from Firebase:', user.firebaseUid);
+    } else {
+      // Update user info if changed
+      let needsUpdate = false;
+      
+      if (decodedToken.email && user.email !== decodedToken.email) {
+        user.email = decodedToken.email;
+        needsUpdate = true;
+      }
+      if (decodedToken.name && user.displayName !== decodedToken.name) {
+        user.displayName = decodedToken.name;
+        needsUpdate = true;
+      }
+      if (decodedToken.picture && user.photoURL !== decodedToken.picture) {
+        user.photoURL = decodedToken.picture;
+        needsUpdate = true;
+      }
+      if (decodedToken.email_verified !== undefined && user.emailVerified !== decodedToken.email_verified) {
+        user.emailVerified = decodedToken.email_verified;
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
+        user.lastLogin = new Date();
+        await user.save();
+      }
     }
 
-    // Attach user to request
+    // Attach user and Firebase data to request
     req.user = user;
-    req.userId = decoded.userId;
-    req.walletAddress = decoded.walletAddress;
+    req.firebaseUser = decodedToken;
+    req.userId = user._id.toString();
 
     next();
   } catch (error) {
@@ -56,7 +93,7 @@ async function authenticate(req, res, next) {
 }
 
 /**
- * Optional authentication middleware
+ * Optional Firebase authentication middleware
  * Attaches user if token is valid, but doesn't block if not
  */
 async function optionalAuth(req, res, next) {
@@ -64,16 +101,20 @@ async function optionalAuth(req, res, next) {
     const authHeader = req.headers.authorization;
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const decoded = verifyAccessToken(token);
-
-      if (decoded) {
-        const user = await User.findById(decoded.userId).select('-refreshTokens');
+      const idToken = authHeader.split(' ')[1];
+      
+      try {
+        const decodedToken = await verifyIdToken(idToken);
+        const user = await User.findOne({ firebaseUid: decodedToken.uid });
+        
         if (user) {
           req.user = user;
-          req.userId = decoded.userId;
-          req.walletAddress = decoded.walletAddress;
+          req.firebaseUser = decodedToken;
+          req.userId = user._id.toString();
         }
+      } catch (error) {
+        // Token invalid, continue without auth
+        console.log('Optional auth: token invalid');
       }
     }
 

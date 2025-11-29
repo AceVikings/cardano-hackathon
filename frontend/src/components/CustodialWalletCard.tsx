@@ -13,6 +13,7 @@ import {
   CheckCircle, 
   AlertCircle,
   ArrowDownToLine,
+  ArrowUpFromLine,
   ExternalLink,
   Copy,
   Check
@@ -38,6 +39,8 @@ export default function CustodialWalletCard({ className = '' }: CustodialWalletC
   const [initializing, setInitializing] = useState(false);
   const [depositing, setDepositing] = useState(false);
   const [depositAmount, setDepositAmount] = useState('10');
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('5');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -114,7 +117,7 @@ export default function CustodialWalletCard({ className = '' }: CustodialWalletC
   };
 
   const handleDeposit = async () => {
-    if (!connected || !wallet || !walletStatus?.initialized) {
+    if (!connected || !wallet || !walletStatus?.initialized || !walletStatus.ownerPkh) {
       setError('Wallet not ready');
       return;
     }
@@ -140,49 +143,125 @@ export default function CustodialWalletCard({ className = '' }: CustodialWalletC
       const addresses = await wallet.getUsedAddresses();
       const changeAddress = addresses[0];
 
-      // Create datum for the deposit
-      const datum = {
-        alternative: 0,
-        fields: [
-          walletStatus.ownerPkh, // owner
-          [], // approved_agents (empty for now, will be added via on-chain tx)
-        ],
-      };
+      const lovelaceAmount = BigInt(Math.floor(amount * 1_000_000));
 
-      // Build transaction
+      // Get Blockfrost provider
       const blockfrost = new BlockfrostProvider('preprodTkz6j43OWTjf9kYQ2ajAeyIdV9pZTcI2');
       const txBuilder = new MeshTxBuilder({
         fetcher: blockfrost,
       });
 
-      const lovelaceAmount = BigInt(Math.floor(amount * 1_000_000));
+      // Check if user already has a UTXO at the script address
+      const scriptUtxos = await blockfrost.fetchAddressUTxOs(SCRIPT_ADDRESS);
+      
+      // Find existing UTXO belonging to this user
+      let existingUtxo = null;
+      let existingValue = BigInt(0);
+      
+      for (const utxo of scriptUtxos) {
+        const plutusData = utxo.output?.plutusData;
+        if (typeof plutusData === 'string') {
+          const pkhMatch = plutusData.match(/d8799f581c([a-f0-9]{56})/i);
+          if (pkhMatch && pkhMatch[1] === walletStatus.ownerPkh) {
+            existingUtxo = utxo;
+            existingValue = BigInt(utxo.output.amount.find((a: any) => a.unit === 'lovelace')?.quantity || '0');
+            break;
+          }
+        }
+      }
 
-      const unsignedTx = await txBuilder
-        .txOut(SCRIPT_ADDRESS, [
-          { unit: 'lovelace', quantity: lovelaceAmount.toString() }
-        ])
-        .txOutInlineDatumValue(datum)
-        .changeAddress(changeAddress)
-        .selectUtxosFrom(utxos)
-        .complete();
+      let unsignedTx: string;
+      let newTotalValue: bigint;
+
+      // Datum for the output using { alternative, fields } format (works with this MeshSDK version)
+      const datum = {
+        alternative: 0,
+        fields: [
+          walletStatus.ownerPkh,
+          walletStatus.approvedAgents || [],
+        ],
+      };
+
+      // Script CBOR for consolidation
+      const scriptCbor = '590a65590a620100003232323232323232323232322253330073232323232533300c3370e9001000899191919299980819b87480000044c8c94ccc050cdc3a40040022646464a66602e66e1d20000011323253330193370e9001000899191919299980f99b87480000044c8c8c8c94ccc08ccdc3a40000022646464646464a666052002264a66605266e1d200000113253330293370e900100089919299981619b87480080045300103d87a80001323253330293375e6e98004cc010010cdc00019bad302b0014bd70099802002000981700118160009bae30290013758604e00266006006605600460520026eb4c0940052f5c0264646464a666050002264a66605066e1d200200113253330283370e900000089919191919191919299981899b87480000044c8c8c94ccc0d0cdc3a40000022646464a66606e00220022940cdd7982000098200011bae303e001303e002375a607800260686ea804854ccc0c8cdc3a40040022646464a66606c66e1d200000113253330363370e9001000899191919299981d19b87480000044c8c94ccc0f0c0fc00852616375a607c002607c0046eb4c0f000458c0e4c0e800458c0e0004c0e0008c0d8004c0c8c0cc00858c0c400458c0b8c0bc00454ccc0b8cdc3a401800226464a66606466e1d20000011323253330343370e9001000899192999819181a8010a4c2a66606600229405280a503375e606a0046eb4c0d400458c0e0004c0e0008c0d8004c0c8c0cc0085858c0c400458c0b8c0bc00454ccc0b8cdc3a401c0022646464a66606466e1d200000113232533303333720004002298103d87a80001323253330333375e00c002006266e9520003303700133004004001133700004903d87a80003370e0020066eb4c0cc008c0dc008c0d40045858c0b8c0bc004c0b4004c0a4c0a8058dd6181380098118138a99812a4811856616c696461746f722072657475726e65642066616c73650013656533025302100115333026302200115333027302337540182a66604c604460506ea805c54ccc098c084c09cdd5018099191980080080e11299981499b8f375c605800400c29444cc00c00c004c0b400458c0ac00458c098c09c004c094004c084c08800cdd6180f800980d8110a99980e1808980f1baa00c1325333019301530183754008264a6660366030603460360022940c078c080004c0780085854ccc064c04cc068dd5008099299980c9808980d1baa00116300a301b301c301c0013758602e603660380022c6034002602a60300022c6ea8c058004c058008c050004c040008c048004c048008c040004c030008c038004c02800858c030004c020c02400458c01cc0200048c01cc020c020c020c0200045261365632533300549011856616c696461746f722072657475726e65642066616c73650013656153300249010f5f72656465656d65723a20566f6964001615330024912a57726f6e67207573616765206f6620636f6e7374727563746f723a20557365645f6279206d7573742062652000163001001222533300600214a22a6660086008600c6ea8004520001375a600e0046eb0c01c004dd7180100098008011bae001230022330020020010012253335573e0026aae78008d55ce8009baa0013754002ae6955ceaab9e5573eae815d0aba201';
+
+      if (existingUtxo) {
+        // CONSOLIDATE: Spend existing UTXO and create new one with combined value
+        console.log('Consolidating existing UTXO with', Number(existingValue) / 1_000_000, 'ADA');
+        
+        newTotalValue = existingValue + lovelaceAmount;
+        
+        // Redeemer for Deposit action (constructor 0) - use { alternative, fields } format
+        const redeemer = { alternative: 0, fields: [] };
+        
+        // Find collateral UTXO
+        const collateralUtxo = utxos.find((utxo: any) => {
+          const lovelace = utxo.output.amount.find((a: any) => a.unit === 'lovelace');
+          const qty = BigInt(lovelace?.quantity ?? 0);
+          return qty >= BigInt(5_000_000);
+        });
+
+        if (!collateralUtxo) {
+          throw new Error('No suitable collateral UTXO found (need at least 5 ADA)');
+        }
+
+        unsignedTx = await txBuilder
+          // Spend the existing script UTXO
+          .spendingPlutusScriptV3()
+          .txIn(
+            existingUtxo.input.txHash,
+            existingUtxo.input.outputIndex
+          )
+          .txInInlineDatumPresent()
+          .txInRedeemerValue(redeemer)
+          .txInScript(scriptCbor)
+          // Create new UTXO with combined value
+          .txOut(SCRIPT_ADDRESS, [
+            { unit: 'lovelace', quantity: newTotalValue.toString() }
+          ])
+          .txOutInlineDatumValue(datum)
+          // Collateral
+          .txInCollateral(
+            collateralUtxo.input.txHash,
+            collateralUtxo.input.outputIndex,
+            collateralUtxo.output.amount,
+            collateralUtxo.output.address
+          )
+          // Owner must sign
+          .requiredSignerHash(walletStatus.ownerPkh)
+          .changeAddress(changeAddress)
+          .selectUtxosFrom(utxos)
+          .complete();
+      } else {
+        // INITIAL DEPOSIT: No existing UTXO, create fresh one
+        console.log('Creating new custodial wallet UTXO');
+        newTotalValue = lovelaceAmount;
+
+        unsignedTx = await txBuilder
+          .txOut(SCRIPT_ADDRESS, [
+            { unit: 'lovelace', quantity: lovelaceAmount.toString() }
+          ])
+          .txOutInlineDatumValue(datum)
+          .changeAddress(changeAddress)
+          .selectUtxosFrom(utxos)
+          .complete();
+      }
 
       // Sign with user's wallet
-      const signedTx = await wallet.signTx(unsignedTx);
+      const signedTx = await wallet.signTx(unsignedTx, true);
       
       // Submit transaction
       const txHashResult = await wallet.submitTx(signedTx);
       setTxHash(txHashResult);
 
       // Update cached balance
-      const currentLovelace = walletStatus.lastKnownBalance?.lovelace || '0';
       const currentTokens = walletStatus.lastKnownBalance?.tokens || [];
-      const newLovelace = (BigInt(currentLovelace) + lovelaceAmount).toString();
-      await updateWalletBalance(newLovelace, currentTokens);
+      await updateWalletBalance(newTotalValue.toString(), currentTokens);
 
       // Refresh status
       await fetchWalletStatus();
 
-      setSuccess(`Deposited ${amount} ADA successfully!`);
+      setSuccess(`Deposited ${amount} ADA successfully! Total: ${Number(newTotalValue) / 1_000_000} ADA`);
       setDepositAmount('10');
       
       setTimeout(() => setSuccess(null), 5000);
@@ -191,6 +270,173 @@ export default function CustodialWalletCard({ className = '' }: CustodialWalletC
       setError(err.message || err.error || 'Deposit failed');
     } finally {
       setDepositing(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!connected || !wallet || !walletStatus?.initialized || !walletStatus.ownerPkh) {
+      setError('Wallet not ready');
+      return;
+    }
+
+    const amount = parseFloat(withdrawAmount);
+    if (isNaN(amount) || amount < 2) {
+      setError('Minimum withdrawal is 2 ADA');
+      return;
+    }
+
+    try {
+      setWithdrawing(true);
+      setError(null);
+      setTxHash(null);
+
+      // Get the Blockfrost provider for fetching UTXOs
+      const blockfrost = new BlockfrostProvider('preprodTkz6j43OWTjf9kYQ2ajAeyIdV9pZTcI2');
+      
+      // Get user addresses
+      const addresses = await wallet.getUsedAddresses();
+      const userAddress = addresses[0];
+
+      // Get UTXOs from the script address and find the one belonging to this user
+      const scriptUtxos = await blockfrost.fetchAddressUTxOs(SCRIPT_ADDRESS);
+      
+      console.log('Looking for owner PKH:', walletStatus.ownerPkh);
+      
+      // Find THE SINGLE UTXO belonging to this user (by checking datum owner)
+      let userUtxo = null;
+      for (const utxo of scriptUtxos) {
+        const plutusData = utxo.output?.plutusData;
+        if (typeof plutusData === 'string') {
+          const pkhMatch = plutusData.match(/d8799f581c([a-f0-9]{56})/i);
+          if (pkhMatch && pkhMatch[1] === walletStatus.ownerPkh) {
+            userUtxo = utxo;
+            console.log('Found user UTXO:', utxo.input.txHash, '#', utxo.input.outputIndex);
+            break;
+          }
+        }
+      }
+
+      if (!userUtxo) {
+        throw new Error('No custodial wallet UTXO found for your wallet');
+      }
+
+      // Get user wallet UTXOs for fees
+      const walletUtxos = await wallet.getUtxos();
+      if (!walletUtxos || walletUtxos.length === 0) {
+        throw new Error('No UTXOs available for fees');
+      }
+
+      const lovelaceAmount = BigInt(Math.floor(amount * 1_000_000));
+      const utxoValue = BigInt(userUtxo.output.amount.find((a: any) => a.unit === 'lovelace')?.quantity || '0');
+      
+      console.log('UTXO value:', utxoValue.toString(), 'lovelace');
+      console.log('Requested withdraw:', lovelaceAmount.toString(), 'lovelace');
+      
+      if (lovelaceAmount > utxoValue) {
+        throw new Error(`Insufficient balance. Available: ${Number(utxoValue) / 1_000_000} ADA`);
+      }
+
+      // Build the withdraw transaction
+      const txBuilder = new MeshTxBuilder({
+        fetcher: blockfrost,
+      });
+
+      // The redeemer for owner withdraw (UserWithdraw = constructor 3)
+      const redeemer = { alternative: 3, fields: [] };
+
+      // Script CBOR (compiled Aiken script)
+      const scriptCbor = '590a65590a620100003232323232323232323232322253330073232323232533300c3370e9001000899191919299980819b87480000044c8c94ccc050cdc3a40040022646464a66602e66e1d20000011323253330193370e9001000899191919299980f99b87480000044c8c8c8c94ccc08ccdc3a40000022646464646464a666052002264a66605266e1d200000113253330293370e900100089919299981619b87480080045300103d87a80001323253330293375e6e98004cc010010cdc00019bad302b0014bd70099802002000981700118160009bae30290013758604e00266006006605600460520026eb4c0940052f5c0264646464a666050002264a66605066e1d200200113253330283370e900000089919191919191919299981899b87480000044c8c8c94ccc0d0cdc3a40000022646464a66606e00220022940cdd7982000098200011bae303e001303e002375a607800260686ea804854ccc0c8cdc3a40040022646464a66606c66e1d200000113253330363370e9001000899191919299981d19b87480000044c8c94ccc0f0c0fc00852616375a607c002607c0046eb4c0f000458c0e4c0e800458c0e0004c0e0008c0d8004c0c8c0cc00858c0c400458c0b8c0bc00454ccc0b8cdc3a401800226464a66606466e1d20000011323253330343370e9001000899192999819181a8010a4c2a66606600229405280a503375e606a0046eb4c0d400458c0e0004c0e0008c0d8004c0c8c0cc0085858c0c400458c0b8c0bc00454ccc0b8cdc3a401c0022646464a66606466e1d200000113232533303333720004002298103d87a80001323253330333375e00c002006266e9520003303700133004004001133700004903d87a80003370e0020066eb4c0cc008c0dc008c0d40045858c0b8c0bc004c0b4004c0a4c0a8058dd6181380098118138a99812a4811856616c696461746f722072657475726e65642066616c73650013656533025302100115333026302200115333027302337540182a66604c604460506ea805c54ccc098c084c09cdd5018099191980080080e11299981499b8f375c605800400c29444cc00c00c004c0b400458c0ac00458c098c09c004c094004c084c08800cdd6180f800980d8110a99980e1808980f1baa00c1325333019301530183754008264a6660366030603460360022940c078c080004c0780085854ccc064c04cc068dd5008099299980c9808980d1baa00116300a301b301c301c0013758602e603660380022c6034002602a60300022c6ea8c058004c058008c050004c040008c048004c048008c040004c030008c038004c02800858c030004c020c02400458c01cc0200048c01cc020c020c020c0200045261365632533300549011856616c696461746f722072657475726e65642066616c73650013656153300249010f5f72656465656d65723a20566f6964001615330024912a57726f6e67207573616765206f6620636f6e7374727563746f723a20557365645f6279206d7573742062652000163001001222533300600214a22a6660086008600c6ea8004520001375a600e0046eb0c01c004dd7180100098008011bae001230022330020020010012253335573e0026aae78008d55ce8009baa0013754002ae6955ceaab9e5573eae815d0aba201';
+
+      // Find a suitable collateral UTXO from user's wallet (need >= 5 ADA)
+      const collateralUtxo = walletUtxos.find((utxo: any) => {
+        const lovelace = utxo.output.amount.find((a: any) => a.unit === 'lovelace');
+        const qty = BigInt(lovelace?.quantity ?? 0);
+        return qty >= BigInt(5_000_000);
+      });
+
+      if (!collateralUtxo) {
+        throw new Error('No suitable collateral UTXO found (need at least 5 ADA in your wallet)');
+      }
+
+      // Calculate remaining value
+      const withdrawLovelace = lovelaceAmount;
+      const remainingLovelace = utxoValue - withdrawLovelace;
+      
+      console.log('Withdrawing:', withdrawLovelace.toString(), 'lovelace');
+      console.log('Remaining:', remainingLovelace.toString(), 'lovelace');
+
+      // Create the datum for output (if partial withdraw)
+      const outputDatum = {
+        alternative: 0,
+        fields: [
+          walletStatus.ownerPkh,
+          walletStatus.approvedAgents || [],
+        ]
+      };
+
+      // Build transaction - use inline datum present for script input
+      let tx = txBuilder
+        .spendingPlutusScriptV3()
+        .txIn(
+          userUtxo.input.txHash,
+          userUtxo.input.outputIndex
+        )
+        .txInInlineDatumPresent()
+        .txInRedeemerValue(redeemer)
+        .txInScript(scriptCbor)
+        // Send requested amount to user
+        .txOut(userAddress, [
+          { unit: 'lovelace', quantity: withdrawLovelace.toString() }
+        ]);
+      
+      // If there's remaining value >= minUTXO, send back to script
+      if (remainingLovelace >= BigInt(2_000_000)) {
+        tx = tx
+          .txOut(SCRIPT_ADDRESS, [
+            { unit: 'lovelace', quantity: remainingLovelace.toString() }
+          ])
+          .txOutInlineDatumValue(outputDatum);
+      }
+
+      // Add collateral for script execution
+      tx = tx.txInCollateral(
+        collateralUtxo.input.txHash,
+        collateralUtxo.input.outputIndex,
+        collateralUtxo.output.amount,
+        collateralUtxo.output.address
+      );
+
+      // Required signer (owner must sign)
+      tx = tx.requiredSignerHash(walletStatus.ownerPkh);
+
+      const unsignedTx = await tx
+        .changeAddress(userAddress)
+        .selectUtxosFrom(walletUtxos)
+        .complete();
+
+      // Sign with user's wallet
+      const signedTx = await wallet.signTx(unsignedTx, true);
+      
+      // Submit transaction
+      const txHashResult = await wallet.submitTx(signedTx);
+      setTxHash(txHashResult);
+
+      // Update cached balance to the remaining value
+      const currentTokens = walletStatus.lastKnownBalance?.tokens || [];
+      await updateWalletBalance(remainingLovelace.toString(), currentTokens);
+
+      // Refresh status
+      await fetchWalletStatus();
+
+      setSuccess(`Withdrew ${amount} ADA successfully! Remaining: ${Number(remainingLovelace) / 1_000_000} ADA`);
+      setWithdrawAmount('5');
+      
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err: any) {
+      console.error('Withdraw failed:', err);
+      setError(err.message || err.error || 'Withdraw failed');
+    } finally {
+      setWithdrawing(false);
     }
   };
 
@@ -372,6 +618,40 @@ export default function CustodialWalletCard({ className = '' }: CustodialWalletC
               </motion.button>
             </div>
             <p className="text-xs text-sea-mist/50">Minimum deposit: 2 ADA</p>
+          </div>
+
+          {/* Withdraw Form */}
+          <div className="space-y-3">
+            <label className="text-sm text-sea-mist">Withdraw ADA</label>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="number"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="Amount"
+                  min="2"
+                  step="1"
+                  className="w-full px-4 py-3 rounded-xl bg-abyss/50 border border-sea-mist/20 text-foam-white placeholder-sea-mist/40 focus:outline-none focus:border-coral"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sea-mist/60">ADA</span>
+              </div>
+              <motion.button
+                className="px-4 py-3 rounded-xl bg-coral text-foam-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                whileHover={{ scale: withdrawing || !connected ? 1 : 1.02 }}
+                whileTap={{ scale: withdrawing || !connected ? 1 : 0.98 }}
+                onClick={handleWithdraw}
+                disabled={withdrawing || !connected}
+              >
+                {withdrawing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <ArrowUpFromLine className="w-5 h-5" />
+                )}
+                Withdraw
+              </motion.button>
+            </div>
+            <p className="text-xs text-sea-mist/50">Minimum withdrawal: 2 ADA</p>
           </div>
 
           {/* Transaction Hash */}

@@ -6,28 +6,37 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useWallet } from "@meshsdk/react";
 import {
-  type User,
-  requestNonce,
-  verifySignature,
-  logout as apiLogout,
-  initializeAuth,
-  clearAuthData,
-  getCurrentUser,
-  getAccessToken,
-  getRefreshToken,
-  refreshAccessToken,
-} from "../services/api";
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile,
+  type User as FirebaseUser,
+} from "firebase/auth";
+import { auth, googleProvider } from "../config/firebase";
+
+// User type for our app
+export interface User {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  emailVerified: boolean;
+  createdAt: string;
+}
 
 interface AuthContextType {
   user: User | null;
+  firebaseUser: FirebaseUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: () => Promise<void>;
-  logout: (logoutAll?: boolean) => Promise<void>;
-  refreshUser: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -37,164 +46,133 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Convert Firebase user to our User type
+function mapFirebaseUser(firebaseUser: FirebaseUser): User {
+  return {
+    id: firebaseUser.uid,
+    email: firebaseUser.email,
+    displayName: firebaseUser.displayName,
+    photoURL: firebaseUser.photoURL,
+    emailVerified: firebaseUser.emailVerified,
+    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+  };
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { wallet, connected, disconnect } = useWallet();
   const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize auth on mount
+  // Listen to auth state changes
   useEffect(() => {
-    const init = async () => {
-      setIsLoading(true);
-      try {
-        const storedUser = await initializeAuth();
-        setUser(storedUser);
-      } catch (err) {
-        console.error("Auth initialization error:", err);
-        clearAuthData();
-      } finally {
-        setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser) {
+        setFirebaseUser(fbUser);
+        setUser(mapFirebaseUser(fbUser));
+      } else {
+        setFirebaseUser(null);
+        setUser(null);
       }
-    };
+      setIsLoading(false);
+    });
 
-    init();
+    return () => unsubscribe();
   }, []);
 
-  // Token refresh interval
-  useEffect(() => {
-    if (!user) return;
-
-    const refreshToken = async () => {
-      const accessToken = getAccessToken();
-      const refreshTokenValue = getRefreshToken();
-
-      if (!accessToken || !refreshTokenValue) return;
-
-      try {
-        // Decode the token to check if it's close to expiring
-        const payload = JSON.parse(atob(accessToken.split(".")[1]));
-        const expiresAt = payload.exp * 1000;
-        const now = Date.now();
-        const timeUntilExpiry = expiresAt - now;
-
-        // If token expires in less than 5 minutes, refresh now
-        if (timeUntilExpiry < 5 * 60 * 1000) {
-          const result = await refreshAccessToken(refreshTokenValue);
-          if (result) {
-            localStorage.setItem("adaflow_access_token", result.accessToken);
-            localStorage.setItem("adaflow_refresh_token", result.refreshToken);
-          } else {
-            // Refresh failed
-            setUser(null);
-            clearAuthData();
-          }
-        }
-      } catch {
-        // Token parsing failed, will be handled by API calls
-      }
-    };
-
-    // Check immediately
-    refreshToken();
-
-    // Then check every 4 minutes
-    const interval = setInterval(refreshToken, 4 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [user]);
-
-  // Handle wallet disconnection
-  useEffect(() => {
-    if (!connected && user) {
-      // Wallet disconnected but user still logged in
-      // You might want to keep the session or force logout
-      // For now, we'll keep the session
-    }
-  }, [connected, user]);
-
-  const login = useCallback(async () => {
-    if (!wallet || !connected) {
-      setError("Wallet not connected");
-      return;
-    }
-
+  // Sign in with email/password
+  const signIn = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Get wallet address
-      const addresses = await wallet.getUsedAddresses();
-      if (addresses.length === 0) {
-        throw new Error("No addresses found in wallet");
-      }
-      const walletAddress = addresses[0];
-
-      // Request nonce from backend
-      const nonceResponse = await requestNonce(walletAddress);
-      const { nonce } = nonceResponse;
-
-      // Sign the nonce with wallet
-      // signData expects (payload, address) or depending on wallet implementation
-      const signatureResult = await wallet.signData(nonce, walletAddress);
-
-      if (!signatureResult) {
-        throw new Error("Signature rejected");
-      }
-
-      // Extract signature and key
-      const { signature, key } = signatureResult;
-
-      // Verify signature with backend and get tokens
-      const authResponse = await verifySignature(walletAddress, signature, key);
-
-      setUser(authResponse.user);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      setFirebaseUser(result.user);
+      setUser(mapFirebaseUser(result.user));
     } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.message || err.error || "Authentication failed");
-      throw err;
+      console.error("Sign in error:", err);
+      const errorMessage = getFirebaseErrorMessage(err.code);
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [wallet, connected]);
+  }, []);
 
-  const logout = useCallback(
-    async (logoutAll = false) => {
-      setIsLoading(true);
-      try {
-        await apiLogout(logoutAll);
-        setUser(null);
-        disconnect();
-      } catch (err) {
-        console.error("Logout error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [disconnect]
-  );
+  // Sign up with email/password
+  const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
+    setIsLoading(true);
+    setError(null);
 
-  const refreshUser = useCallback(async () => {
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    } catch (err) {
-      console.error("Refresh user error:", err);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Update display name if provided
+      if (displayName) {
+        await updateProfile(result.user, { displayName });
+      }
+      
+      setFirebaseUser(result.user);
+      setUser(mapFirebaseUser(result.user));
+    } catch (err: any) {
+      console.error("Sign up error:", err);
+      const errorMessage = getFirebaseErrorMessage(err.code);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
+  // Sign in with Google
+  const signInWithGoogle = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      setFirebaseUser(result.user);
+      setUser(mapFirebaseUser(result.user));
+    } catch (err: any) {
+      console.error("Google sign in error:", err);
+      const errorMessage = getFirebaseErrorMessage(err.code);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Logout
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await signOut(auth);
+      setFirebaseUser(null);
+      setUser(null);
+    } catch (err: any) {
+      console.error("Logout error:", err);
+      setError("Failed to sign out");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
   const value: AuthContextType = {
     user,
+    firebaseUser,
     isAuthenticated: !!user,
     isLoading,
     error,
-    login,
+    signIn,
+    signUp,
+    signInWithGoogle,
     logout,
-    refreshUser,
     clearError,
   };
 
@@ -207,6 +185,38 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+// Helper function to get user-friendly error messages
+function getFirebaseErrorMessage(errorCode: string): string {
+  switch (errorCode) {
+    case "auth/email-already-in-use":
+      return "This email is already registered. Please sign in instead.";
+    case "auth/invalid-email":
+      return "Invalid email address.";
+    case "auth/operation-not-allowed":
+      return "This sign-in method is not enabled.";
+    case "auth/weak-password":
+      return "Password is too weak. Please use at least 6 characters.";
+    case "auth/user-disabled":
+      return "This account has been disabled.";
+    case "auth/user-not-found":
+      return "No account found with this email.";
+    case "auth/wrong-password":
+      return "Incorrect password.";
+    case "auth/invalid-credential":
+      return "Invalid email or password.";
+    case "auth/too-many-requests":
+      return "Too many failed attempts. Please try again later.";
+    case "auth/popup-closed-by-user":
+      return "Sign-in popup was closed before completion.";
+    case "auth/cancelled-popup-request":
+      return "Sign-in was cancelled.";
+    case "auth/network-request-failed":
+      return "Network error. Please check your connection.";
+    default:
+      return "An error occurred. Please try again.";
+  }
 }
 
 export default AuthContext;

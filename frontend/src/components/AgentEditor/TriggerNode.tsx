@@ -116,12 +116,21 @@ function TriggerNode({ data, selected }: NodeProps & { data: TriggerNodeData }) 
         )}
       </div>
 
-      {/* Output Handle - Triggers only have output */}
+      {/* Trigger Output Handle (Bottom) - connects to agent trigger-in */}
       <Handle
         type="source"
-        position={Position.Right}
+        position={Position.Bottom}
+        id="trigger-out"
         className="!w-3 !h-3 !bg-bioluminescent !border-2 !border-foam-white"
+        style={{ bottom: -6 }}
       />
+
+      {/* Label for trigger output */}
+      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2">
+        <span className="text-[10px] text-bioluminescent/70 flex items-center gap-0.5">
+          <Play className="w-2.5 h-2.5" /> trigger
+        </span>
+      </div>
     </div>
   );
 }
