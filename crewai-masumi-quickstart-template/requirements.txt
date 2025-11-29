@@ -7,4 +7,9 @@ pydantic
 python-multipart
 httpx
 crewai-tools
-minswap-py
+charli3-dendrite
+pycardano
+blockfrost-python
+charli3-dendrite
+blockfrost-python
+pycardano

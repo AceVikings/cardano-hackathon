@@ -174,7 +174,7 @@ async def handle_payment_status(job_id: str, payment_id: str) -> None:
         
         # Update job status to running
         jobs[job_id]["status"] = "running"
-        logger.info(f"Input data: {jobs[job_id]["input_data"]}")
+        logger.info(f"Input data: {jobs[job_id]['input_data']}")
 
         # Execute the AI task
         result = await execute_crew_task(jobs[job_id]["input_data"])
@@ -309,7 +309,7 @@ def main():
     print("=" * 70 + "\n")
     
     # Define test input
-    input_data = {"text": "Swap amount: 1000  baseToken: ADA to targetToken:  MIN for using minswap DEX on Cardano"}
+    input_data = {"text": "Swap amount: 1  baseToken: ADA to targetToken:  MIN for using minswap DEX on Cardano"}
     
     print(f"Input: {input_data['text']}")
     print("\nProcessing with CrewAI agents...\n")
