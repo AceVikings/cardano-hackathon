@@ -74,7 +74,8 @@ app.get("/api/available-triggers", (req, res) => {
         {
           name: "cronExpression",
           type: "string",
-          description: "Cron expression (e.g., '*/5 * * * *' for every 5 minutes)",
+          description:
+            "Cron expression (e.g., '*/5 * * * *' for every 5 minutes)",
           required: true,
           default: "0 * * * *",
           presets: [
@@ -149,7 +150,8 @@ app.get("/api/available-triggers", (req, res) => {
         {
           name: "tokenFilter",
           type: "string",
-          description: "Only trigger for specific token (optional, leave empty for any)",
+          description:
+            "Only trigger for specific token (optional, leave empty for any)",
           required: false,
         },
       ],
@@ -202,6 +204,7 @@ app.get("/api/available-agents", (req, res) => {
     },
     {
       id: "conversation-agent",
+      url: "http://139.84.155.199:8000",
       name: "Conversation Agent",
       description:
         "Agent for processing conversational input and generating responses",

@@ -1,0 +1,124 @@
+First call to start a job (This is for conversation agent):
+
+curl -X 'POST' \
+  'http://139.84.155.199:8000/start_job' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "identifier_from_purchaser": "6617fc7ed44322219fc9c321",
+  "input_data": {
+    "text": "How ya doin"
+  }
+}'
+
+RESPONSE:
+{
+  "status": "success",
+  "job_id": "31a9401e-08a0-4eeb-b5bc-fe813f9462c0",
+  "blockchainIdentifier": "1b00e0cc0460ec109c0c604647002cb580cd605310018c4c239501593783300130557c02679e29563147137d6710730043586d80d4150a1e08e332308f36225882c20d4a5f1378838992d2183c7cf04394c38c983235f1409f7a26490961dc4822262b206adb2fc3aaa50a0a89ec821f0c05660e46091f0f1b01066388ca89250f234101a64640074c0c0dc945234a8a8608c35ca9408d588056664862a60f89c50f8e4208cf8a088441038a343aacc50f0953488013898a80b088c66b01afc868c381064e8f1a3f81698c06038268238c664c02128a86859d150f1d6e06e9da355048834a0fa88780e1205a55bf4c2151a0812ef27880ce08843080c8691d0b1f039339cd18681032868374610868542c97cb254322c1421446153c438741e0e264552238082444a850c543370c0a0689a116ad7ebc1569e4b0982060433b0c85e1002904865ba02962abf041f064449edc54430128f1446009da4986c3e0dcad062581ec8760cab8daa80d0c05d3a8ea819645a4052d4f108978c4227634e551479068a36ab88202c3754101981d630a0a99c3153ac0574bd68e8196ca9618e3180a2b14e411ecc02e194138813015d49d56f55bab5ce1ccfa0313711463871b5558d3542cde68b65b8ad61b5416c767b5801dcec753b9c74571d50000",
+  "submitResultTime": "1764524548894",
+  "unlockTime": "1764546148894",
+  "externalDisputeUnlockTime": "1764567748894",
+  "agentIdentifier": "7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f779c9071abf538dd0514caa37684ab1176c653345376cc379b84e247772bdb4b55",
+  "sellerVKey": "1ee43801d68501ce3b0028204ad4d8ae2b3706b918685e2cacc0db3e",
+  "identifierFromPurchaser": "6617fc7ed44322219fc9c321",
+  "amounts": [
+    {
+      "amount": "100000",
+      "unit": "lovelace"
+    }
+  ],
+  "input_hash": "1f01dc30d94d7ec2711734777aeeb8b5fb238c08fcf90592664bcb79d34e3126",
+  "payByTime": "1764481348894"
+}
+
+
+Once the job is started, call the following API to pay for it: Get the details from the above response
+
+NEXT STEP:
+curl -X 'POST' \
+  'http://139.84.155.199:3001/api/v1/purchase/' \
+  -H 'accept: application/json' \
+  -H 'token: this_should_be_very_secure_and_at_least_15_chars_anshuman' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "identifierFromPurchaser": "6617fc7ed44322219fc9c321",
+  "network": "Preprod",
+  "sellerVkey": "1ee43801d68501ce3b0028204ad4d8ae2b3706b918685e2cacc0db3e",
+  "paymentType": "Web3CardanoV1",
+  "blockchainIdentifier": "1b00e0cc0460ec109c0c604647002cb580cd605310018c4c239501593783300130557c02679e29563147137d6710730043586d80d4150a1e08e332308f36225882c20d4a5f1378838992d2183c7cf04394c38c983235f1409f7a26490961dc4822262b206adb2fc3aaa50a0a89ec821f0c05660e46091f0f1b01066388ca89250f234101a64640074c0c0dc945234a8a8608c35ca9408d588056664862a60f89c50f8e4208cf8a088441038a343aacc50f0953488013898a80b088c66b01afc868c381064e8f1a3f81698c06038268238c664c02128a86859d150f1d6e06e9da355048834a0fa88780e1205a55bf4c2151a0812ef27880ce08843080c8691d0b1f039339cd18681032868374610868542c97cb254322c1421446153c438741e0e264552238082444a850c543370c0a0689a116ad7ebc1569e4b0982060433b0c85e1002904865ba02962abf041f064449edc54430128f1446009da4986c3e0dcad062581ec8760cab8daa80d0c05d3a8ea819645a4052d4f108978c4227634e551479068a36ab88202c3754101981d630a0a99c3153ac0574bd68e8196ca9618e3180a2b14e411ecc02e194138813015d49d56f55bab5ce1ccfa0313711463871b5558d3542cde68b65b8ad61b5416c767b5801dcec753b9c74571d50000",
+  "payByTime": "1764481348894",
+    "submitResultTime": "1764524548894",
+    "unlockTime": "1764546148894",
+    "collateralReturnLovelace": null,
+    "externalDisputeUnlockTime": "1764567748894",
+    "requestedById": "cmikjjjuc0000mdaiibiva66p",
+    "inputHash": "1f01dc30d94d7ec2711734777aeeb8b5fb238c08fcf90592664bcb79d34e3126",
+  "agentIdentifier": "7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f779c9071abf538dd0514caa37684ab1176c653345376cc379b84e247772bdb4b55"
+}'
+
+RESPONESS:
+{
+  "status": "success",
+  "data": {
+    "id": "cmiklfl13000mmdbufq5fxv8t",
+    "createdAt": "2025-11-29T17:56:54.711Z",
+    "updatedAt": "2025-11-29T17:56:54.711Z",
+    "blockchainIdentifier": "1b00e0cc0460ec109c0c604647002cb580cd605310018c4c239501593783300130557c02679e29563147137d6710730043586d80d4150a1e08e332308f36225882c20d4a5f1378838992d2183c7cf04394c38c983235f1409f7a26490961dc4822262b206adb2fc3aaa50a0a89ec821f0c05660e46091f0f1b01066388ca89250f234101a64640074c0c0dc945234a8a8608c35ca9408d588056664862a60f89c50f8e4208cf8a088441038a343aacc50f0953488013898a80b088c66b01afc868c381064e8f1a3f81698c06038268238c664c02128a86859d150f1d6e06e9da355048834a0fa88780e1205a55bf4c2151a0812ef27880ce08843080c8691d0b1f039339cd18681032868374610868542c97cb254322c1421446153c438741e0e264552238082444a850c543370c0a0689a116ad7ebc1569e4b0982060433b0c85e1002904865ba02962abf041f064449edc54430128f1446009da4986c3e0dcad062581ec8760cab8daa80d0c05d3a8ea819645a4052d4f108978c4227634e551479068a36ab88202c3754101981d630a0a99c3153ac0574bd68e8196ca9618e3180a2b14e411ecc02e194138813015d49d56f55bab5ce1ccfa0313711463871b5558d3542cde68b65b8ad61b5416c767b5801dcec753b9c74571d50000",
+    "lastCheckedAt": null,
+    "payByTime": "1764481348894",
+    "submitResultTime": "1764524548894",
+    "unlockTime": "1764546148894",
+    "externalDisputeUnlockTime": "1764567748894",
+    "requestedById": "cmikjjjuc0000mdaiibiva66p",
+    "resultHash": "",
+    "inputHash": "1f01dc30d94d7ec2711734777aeeb8b5fb238c08fcf90592664bcb79d34e3126",
+    "onChainState": null,
+    "NextAction": {
+      "requestedAction": "FundsLockingRequested",
+      "errorType": null,
+      "errorNote": null
+    },
+    "CurrentTransaction": null,
+    "PaidFunds": [
+      {
+        "amount": "1000000",
+        "unit": ""
+      }
+    ],
+    "WithdrawnForSeller": [],
+    "WithdrawnForBuyer": [],
+    "PaymentSource": {
+      "id": "cmikjjkjz0003mdaip9hr45ay",
+      "network": "Preprod",
+      "policyId": "7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f77",
+      "smartContractAddress": "addr_test1wz7j4kmg2cs7yf92uat3ed4a3u97kr7axxr4avaz0lhwdsqukgwfm",
+      "paymentType": "Web3CardanoV1"
+    },
+    "SellerWallet": {
+      "id": "cmiklfl13000pmdbuxnl520r5",
+      "walletVkey": "1ee43801d68501ce3b0028204ad4d8ae2b3706b918685e2cacc0db3e"
+    },
+    "SmartContractWallet": null,
+    "metadata": null
+  }
+}
+
+
+Once this is done, wait for 1 minute to let the agent process the job. Then call the following API to get the result:
+
+curl -X 'GET' \
+  'http://139.84.155.199:8000/status?job_id=31a9401e-08a0-4eeb-b5bc-fe813f9462c0' \
+  -H 'accept: application/json'
+
+
+  OUTPUT:
+  {
+  "job_id": "31a9401e-08a0-4eeb-b5bc-fe813f9462c0",
+  "status": "completed",
+  "payment_status": "completed",
+  "result": "The phrase \"How ya doin'\" is an informal and colloquial way of asking \"How are you doing?\" or \"How are you?\" It is commonly used in casual conversation as a friendly greeting or icebreaker. Linguistically, it reflects informal English speech patterns, especially in American English, where \"ya\" substitutes \"you\" and \"doin'\" omits the 'g' from \"doing,\" creating a relaxed, conversational tone. Regionally, it is prevalent in English-speaking areas such as the United States, Canada, and Australia, and can convey friendliness, familiarity, or flirtation.\n\nCulturally, the phrase gained widespread popularity through its use by Joey Tribbiani, a character on the American TV series 'Friends,' where it became a signature flirtatious catchphrase, enhancing its global recognition. Socially, \"How ya doin'\" functions as an informal greeting designed to initiate brief social interaction, signaling openness and approachability without necessarily expecting a detailed response.\n\nGrammatically, the phrase is a reduced form of \"How are you doing?\" representing common phonetic simplifications in casual spoken English, including the omission of the auxiliary verb \"are.\" Overall, \"How ya doin'\" exemplifies culturally rich, informal greeting practices in spoken English, popularized through media and everyday use, and emphasizing relaxed interpersonal communication."
+
+  }
+
+
