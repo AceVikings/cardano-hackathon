@@ -58,6 +58,7 @@ app.get("/api/available-agents", (req, res) => {
       description:
         "Agent for generating token swap transactions on Cardano using Minswap DEX",
       invokeUrl: "/api/agents/swap-token-agent/invoke",
+      executionCost: "1 ADA",
       inputParameters: [
         {
           name: "fromToken",
@@ -84,8 +85,10 @@ app.get("/api/available-agents", (req, res) => {
     {
       id: "conversation-agent",
       name: "Conversation Agent",
-      description: "Agent for processing conversational input and generating responses",
+      description:
+        "Agent for processing conversational input and generating responses",
       invokeUrl: "/api/agents/conversation-agent/invoke",
+      executionCost: "1 ADA",
       inputParameters: [
         {
           name: "inputText",
