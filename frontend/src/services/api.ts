@@ -161,8 +161,11 @@ export interface AgentOutput {
 }
 
 export interface AvailableAgent {
+  id: string;
   name: string;
   description: string;
+  invokeUrl: string;
+  executionCost: string;
   inputParameters: AgentInputParameter[];
   output: AgentOutput;
 }

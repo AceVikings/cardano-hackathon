@@ -4,12 +4,16 @@ import type { NodeProps } from '@xyflow/react';
 import { Zap, Send, Play } from 'lucide-react';
 
 export interface AgentNodeData {
+  agentId?: string;
   label: string;
-  type: 'swap' | 'transfer';
+  type: 'swap' | 'transfer' | 'custom';
   status: 'active' | 'inactive' | 'configuring';
   description?: string;
+  invokeUrl?: string;
+  executionCost?: string;
   inputParameters?: Array<{ name: string; type: string; description: string }>;
   output?: { name: string; type: string; description: string };
+  inputValues?: Record<string, { value: string; source: 'manual' | 'connection' }>;
 }
 
 const iconMap: Record<string, typeof Zap> = {
@@ -91,6 +95,11 @@ function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className={`w-2 h-2 rounded-full ${statusColor}`} />
               <span className="text-xs text-sea-mist/60 capitalize">{data.status}</span>
+              {data.executionCost && (
+                <span className="text-[9px] text-aqua-glow bg-aqua-glow/10 px-1 py-0.5 rounded font-mono ml-1">
+                  {data.executionCost}
+                </span>
+              )}
             </div>
           </div>
         </div>

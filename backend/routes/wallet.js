@@ -84,6 +84,79 @@ router.get("/", authenticate, async (req, res) => {
 });
 
 /**
+ * GET /api/wallet/balance
+ * Get the ADA balance of the user's developer wallet
+ */
+router.get("/balance", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user.developerWallet?.initialized) {
+      return res.status(404).json({
+        success: false,
+        error: "Wallet not initialized",
+      });
+    }
+
+    // Initialize Blockfrost provider
+    const provider = new BlockfrostProvider(
+      process.env.BLOCKFROST_API_KEY_PREPROD
+    );
+
+    // Fetch UTXOs for the wallet address
+    const utxos = await provider.fetchAddressUTxOs(
+      user.developerWallet.paymentAddress
+    );
+
+    // Calculate total lovelace from all UTXOs
+    let totalLovelace = BigInt(0);
+    const tokens = [];
+
+    for (const utxo of utxos) {
+      // Add lovelace
+      const lovelaceAmount = utxo.output.amount.find(a => a.unit === "lovelace");
+      if (lovelaceAmount) {
+        totalLovelace += BigInt(lovelaceAmount.quantity);
+      }
+
+      // Collect tokens (non-ADA assets)
+      for (const asset of utxo.output.amount) {
+        if (asset.unit !== "lovelace") {
+          const existingToken = tokens.find(t => t.unit === asset.unit);
+          if (existingToken) {
+            existingToken.quantity = (BigInt(existingToken.quantity) + BigInt(asset.quantity)).toString();
+          } else {
+            tokens.push({
+              unit: asset.unit,
+              quantity: asset.quantity,
+            });
+          }
+        }
+      }
+    }
+
+    // Convert lovelace to ADA (1 ADA = 1,000,000 lovelace)
+    const adaBalance = Number(totalLovelace) / 1_000_000;
+
+    res.json({
+      success: true,
+      balance: {
+        lovelace: totalLovelace.toString(),
+        ada: adaBalance,
+        tokens,
+        utxoCount: utxos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Get balance error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch balance",
+    });
+  }
+});
+
+/**
  * GET /api/wallet/status
  * Get user's custodial wallet status
  */

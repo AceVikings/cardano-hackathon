@@ -118,10 +118,13 @@ export default function AgentPalette({ onDragStart }: AgentPaletteProps) {
                 <motion.div
                   draggable
                   onDragStart={(e) => onDragStart(e as unknown as React.DragEvent, 'agent', {
+                    agentId: agent.id,
                     label: agent.name,
                     type: agentType,
                     status: 'configuring',
                     description: agent.description,
+                    invokeUrl: agent.invokeUrl,
+                    executionCost: agent.executionCost,
                     inputParameters: agent.inputParameters,
                     output: agent.output,
                   })}
@@ -134,7 +137,12 @@ export default function AgentPalette({ onDragStart }: AgentPaletteProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foam-white truncate">{agent.name}</p>
-                    <p className="text-xs text-sea-mist/50 truncate">{agent.description}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-sea-mist/50 truncate flex-1">{agent.description}</p>
+                      <span className="text-[10px] text-aqua-glow bg-aqua-glow/10 px-1.5 py-0.5 rounded font-mono flex-shrink-0">
+                        {agent.executionCost}
+                      </span>
+                    </div>
                   </div>
                   <button
                     onClick={(e) => {

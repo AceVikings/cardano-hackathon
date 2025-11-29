@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import type { DragEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -19,8 +19,10 @@ import { Save, FolderOpen, Loader2, Power, Trash2, Rocket } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import AgentNode from './AgentNode';
+import type { AgentNodeData } from './AgentNode';
 import TriggerNode from './TriggerNode';
 import AgentPalette from './AgentPalette';
+import NodeConfigSidebar from './NodeConfigSidebar';
 import { useToast } from '../../context/ToastContext';
 import {
   createWorkflow,
@@ -73,6 +75,75 @@ function AgentEditorCanvas() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  // Get the selected node
+  const selectedNode = useMemo(() => {
+    if (!selectedNodeId) return null;
+    return nodes.find(n => n.id === selectedNodeId) || null;
+  }, [selectedNodeId, nodes]);
+
+  // Get connected inputs for the selected node
+  const connectedInputs = useMemo(() => {
+    if (!selectedNodeId) return [];
+    return edges
+      .filter(e => e.target === selectedNodeId && e.targetHandle?.startsWith('input-'))
+      .map(e => e.targetHandle?.replace('input-', '') || '');
+  }, [selectedNodeId, edges]);
+
+  // Handle node selection
+  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    if (node.type === 'agent') {
+      setSelectedNodeId(node.id);
+    } else {
+      setSelectedNodeId(null);
+    }
+  }, []);
+
+  // Handle pane click to deselect
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
+
+  // Update node data
+  const handleUpdateNode = useCallback((nodeId: string, data: Partial<AgentNodeData>) => {
+    setNodes(nds => 
+      nds.map(node => 
+        node.id === nodeId 
+          ? { ...node, data: { ...node.data, ...data } }
+          : node
+      )
+    );
+    setHasUnsavedChanges(true);
+  }, [setNodes]);
+
+  // Calculate total workflow execution cost
+  const workflowCost = useMemo(() => {
+    const agentNodes = nodes.filter(n => n.type === 'agent');
+    let totalAda = 0;
+    const GAS_ESTIMATE = 0.5; // Estimated gas cost in ADA per transaction
+    
+    agentNodes.forEach(node => {
+      const data = node.data as unknown as AgentNodeData;
+      if (data.executionCost) {
+        // Parse cost string like "1 ADA" -> 1
+        const costMatch = data.executionCost.match(/(\d+(?:\.\d+)?)/);
+        if (costMatch) {
+          totalAda += parseFloat(costMatch[1]);
+        }
+      }
+    });
+    
+    // Add gas estimate if there are agents
+    const gasEstimate = agentNodes.length > 0 ? GAS_ESTIMATE * agentNodes.length : 0;
+    
+    return {
+      agentCost: totalAda,
+      gasCost: gasEstimate,
+      total: totalAda + gasEstimate,
+      agentCount: agentNodes.length,
+    };
+  }, [nodes]);
 
   // Load existing workflow if workflowId is provided
   useEffect(() => {
@@ -339,6 +410,20 @@ function AgentEditorCanvas() {
           {hasUnsavedChanges && (
             <span className="text-xs text-sea-mist/50">Unsaved changes</span>
           )}
+          
+          {/* Workflow Cost Estimate */}
+          {workflowCost.agentCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-current-blue/10 border border-current-blue/20">
+              <span className="text-xs text-sea-mist/60">Est. Cost:</span>
+              <span className="text-sm font-mono text-aqua-glow font-medium">
+                {workflowCost.total.toFixed(2)} ADA
+              </span>
+              <div className="hidden md:flex items-center gap-1 text-[10px] text-sea-mist/40">
+                <span>({workflowCost.agentCount} agent{workflowCost.agentCount !== 1 ? 's' : ''}</span>
+                <span>+ ~{workflowCost.gasCost.toFixed(2)} gas)</span>
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
@@ -417,7 +502,7 @@ function AgentEditorCanvas() {
       <div className="flex flex-1 overflow-hidden">
         <AgentPalette onDragStart={onDragStart} />
 
-        <div ref={reactFlowWrapper} className="flex-1 h-full">
+        <div ref={reactFlowWrapper} className="flex-1 h-full relative">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -426,6 +511,8 @@ function AgentEditorCanvas() {
             onConnect={onConnect}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
             fitView
             snapToGrid
@@ -463,6 +550,14 @@ function AgentEditorCanvas() {
               color="rgba(165, 216, 230, 0.15)"
             />
           </ReactFlow>
+
+          {/* Node Configuration Sidebar */}
+          <NodeConfigSidebar
+            selectedNode={selectedNode}
+            onClose={() => setSelectedNodeId(null)}
+            onUpdateNode={handleUpdateNode}
+            connectedInputs={connectedInputs}
+          />
         </div>
       </div>
 
