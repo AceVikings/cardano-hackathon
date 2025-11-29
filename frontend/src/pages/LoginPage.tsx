@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wallet, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useWallet } from '@meshsdk/react';
 import { BrowserWallet } from '@meshsdk/core';
+import { useAuth } from '../context/AuthContext';
 
 // Bubble background component
 function BubbleBackground() {
@@ -47,7 +48,10 @@ interface WalletInfo {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { wallet, connected, connect, disconnect } = useWallet();
+  const { login, isAuthenticated, isLoading: authLoading, error: authError, clearError } = useAuth();
+  
   const [availableWallets, setAvailableWallets] = useState<WalletInfo[]>([]);
   const [authStep, setAuthStep] = useState<'connect' | 'sign' | 'success' | 'error'>('connect');
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
@@ -55,6 +59,14 @@ export default function LoginPage() {
   const [isSigning, setIsSigning] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [walletAddress, setWalletAddress] = useState<string>('');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const from = (location.state as any)?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
 
   // Fetch available wallets on mount
   useEffect(() => {
@@ -82,6 +94,14 @@ export default function LoginPage() {
     getAddress();
   }, [connected, wallet]);
 
+  // Handle auth errors
+  useEffect(() => {
+    if (authError) {
+      setErrorMessage(authError);
+      setAuthStep('error');
+    }
+  }, [authError]);
+
   // Default wallet icons for common wallets
   const defaultWalletIcons: Record<string, string> = {
     eternl: '🔷',
@@ -96,6 +116,7 @@ export default function LoginPage() {
   const handleWalletConnect = async (walletId: string) => {
     setSelectedWallet(walletId);
     setIsConnecting(true);
+    clearError();
     try {
       await connect(walletId);
       setAuthStep('sign');
@@ -111,30 +132,20 @@ export default function LoginPage() {
     if (!wallet) return;
     
     setIsSigning(true);
+    clearError();
+    
     try {
-      const nonce = `AdaFlow Authentication - ${Date.now()}`;
+      // Use the auth context login which handles nonce, signature, and token storage
+      await login();
       
-      const addresses = await wallet.getUsedAddresses();
-      const address = addresses[0];
-      
-      // signData expects: address (bech32) and payload (string)
-      const signature = await wallet.signData(nonce, address);
-      
-      if (signature) {
-        // Here you would typically send the signature to your backend for verification
-        // For now, we'll simulate a successful auth
-        console.log('Signature:', signature);
-        setAuthStep('success');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
-      } else {
-        setErrorMessage('Signature rejected. Please try again.');
-        setAuthStep('error');
-      }
-    } catch (err) {
+      setAuthStep('success');
+      setTimeout(() => {
+        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }, 1500);
+    } catch (err: any) {
       console.error('Sign error:', err);
-      setErrorMessage('Failed to sign message. Please try again.');
+      setErrorMessage(err.message || err.error || 'Failed to sign message. Please try again.');
       setAuthStep('error');
     } finally {
       setIsSigning(false);
@@ -147,6 +158,7 @@ export default function LoginPage() {
     setSelectedWallet(null);
     setErrorMessage('');
     setWalletAddress('');
+    clearError();
   };
 
   const truncateAddress = (address: string) => {

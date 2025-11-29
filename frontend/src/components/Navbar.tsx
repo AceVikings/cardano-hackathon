@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const navLinks = [
   { label: 'How it Works', href: '#how-it-works' },
@@ -13,8 +14,10 @@ const navLinks = [
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +28,16 @@ export default function Navbar() {
   }, []);
 
   const isLandingPage = location.pathname === '/';
+
+  const truncateAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+    navigate('/');
+  };
 
   return (
     <>
@@ -48,11 +61,11 @@ export default function Navbar() {
               whileHover={{ scale: 1.02 }}
               onClick={() => navigate('/')}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-current-blue to-aqua-glow flex items-center justify-center relative overflow-hidden">
-                <span className="text-foam-white font-bold text-sm relative z-10">AF</span>
-                {/* Liquid shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-transparent translate-y-full animate-[shimmer_2s_infinite]" />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="AdaFlow" 
+                className="w-10 h-10 rounded-xl object-contain"
+              />
               <span className="text-xl font-bold text-foam-white font-heading hidden sm:block">
                 AdaFlow
               </span>
@@ -77,24 +90,72 @@ export default function Navbar() {
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center gap-4">
-              {location.pathname !== '/login' && (
-                <motion.button
-                  className="ripple px-5 py-2.5 font-heading font-semibold text-sm uppercase tracking-wider text-sea-mist bg-transparent border border-current-blue/40 rounded-xl cursor-pointer transition-all duration-300 hover:text-foam-white hover:border-aqua-glow"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate('/login')}
-                >
-                  Sign In
-                </motion.button>
+              {isAuthenticated && user ? (
+                <div className="relative">
+                  <motion.button
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-abyss/70 border border-current-blue/30 text-foam-white hover:border-aqua-glow transition-all"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-current-blue to-aqua-glow flex items-center justify-center">
+                      <User className="w-4 h-4 text-foam-white" />
+                    </div>
+                    <span className="text-sm font-mono">{truncateAddress(user.walletAddress)}</span>
+                  </motion.button>
+                  
+                  {/* User Dropdown Menu */}
+                  <AnimatePresence>
+                    {showUserMenu && (
+                      <motion.div
+                        className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-abyss/95 backdrop-blur-lg border border-current-blue/30 overflow-hidden"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                      >
+                        <button
+                          className="w-full px-4 py-3 text-left text-sm text-sea-mist hover:bg-current-blue/20 hover:text-foam-white transition-colors flex items-center gap-2"
+                          onClick={() => {
+                            navigate('/dashboard');
+                            setShowUserMenu(false);
+                          }}
+                        >
+                          <User className="w-4 h-4" />
+                          Dashboard
+                        </button>
+                        <button
+                          className="w-full px-4 py-3 text-left text-sm text-sea-mist hover:bg-coral/20 hover:text-coral transition-colors flex items-center gap-2"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <>
+                  {location.pathname !== '/login' && (
+                    <motion.button
+                      className="ripple px-5 py-2.5 font-heading font-semibold text-sm uppercase tracking-wider text-sea-mist bg-transparent border border-current-blue/40 rounded-xl cursor-pointer transition-all duration-300 hover:text-foam-white hover:border-aqua-glow"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => navigate('/login')}
+                    >
+                      Sign In
+                    </motion.button>
+                  )}
+                  <motion.button
+                    className="liquid-btn px-5 py-2.5 font-heading font-semibold text-sm uppercase tracking-wider text-foam-white bg-gradient-to-br from-current-blue to-aqua-glow rounded-xl cursor-pointer"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/login')}
+                  >
+                    <span className="relative z-10">Launch App</span>
+                  </motion.button>
+                </>
               )}
-              <motion.button
-                className="liquid-btn px-5 py-2.5 font-heading font-semibold text-sm uppercase tracking-wider text-foam-white bg-gradient-to-br from-current-blue to-aqua-glow rounded-xl cursor-pointer"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate('/login')}
-              >
-                <span className="relative z-10">Launch App</span>
-              </motion.button>
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -136,7 +197,7 @@ export default function Navbar() {
               transition={{ duration: 0.3 }}
             >
               <div className="flex flex-col gap-4">
-                {navLinks.map((link, index) => (
+                {isLandingPage && navLinks.map((link, index) => (
                   <motion.a
                     key={link.label}
                     href={link.href}
@@ -150,24 +211,55 @@ export default function Navbar() {
                   </motion.a>
                 ))}
                 <div className="h-px bg-foam-white/10 my-2" />
-                <button
-                  className="w-full py-3 font-heading font-semibold text-sm uppercase tracking-wider text-sea-mist bg-transparent border border-current-blue/40 rounded-xl cursor-pointer transition-all duration-300 hover:text-foam-white hover:border-aqua-glow"
-                  onClick={() => {
-                    navigate('/login');
-                    setIsMobileOpen(false);
-                  }}
-                >
-                  Sign In
-                </button>
-                <button
-                  className="w-full py-3 font-heading font-semibold text-sm uppercase tracking-wider text-foam-white bg-gradient-to-br from-current-blue to-aqua-glow rounded-xl cursor-pointer transition-all duration-300"
-                  onClick={() => {
-                    navigate('/login');
-                    setIsMobileOpen(false);
-                  }}
-                >
-                  <span>Launch App</span>
-                </button>
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-current-blue to-aqua-glow flex items-center justify-center">
+                        <User className="w-4 h-4 text-foam-white" />
+                      </div>
+                      <span className="text-sm font-mono text-sea-mist">{truncateAddress(user.walletAddress)}</span>
+                    </div>
+                    <button
+                      className="w-full py-3 font-heading font-semibold text-sm uppercase tracking-wider text-foam-white bg-gradient-to-br from-current-blue to-aqua-glow rounded-xl cursor-pointer transition-all duration-300"
+                      onClick={() => {
+                        navigate('/dashboard');
+                        setIsMobileOpen(false);
+                      }}
+                    >
+                      Dashboard
+                    </button>
+                    <button
+                      className="w-full py-3 font-heading font-semibold text-sm uppercase tracking-wider text-sea-mist bg-transparent border border-coral/40 rounded-xl cursor-pointer transition-all duration-300 hover:text-coral hover:border-coral"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileOpen(false);
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="w-full py-3 font-heading font-semibold text-sm uppercase tracking-wider text-sea-mist bg-transparent border border-current-blue/40 rounded-xl cursor-pointer transition-all duration-300 hover:text-foam-white hover:border-aqua-glow"
+                      onClick={() => {
+                        navigate('/login');
+                        setIsMobileOpen(false);
+                      }}
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      className="w-full py-3 font-heading font-semibold text-sm uppercase tracking-wider text-foam-white bg-gradient-to-br from-current-blue to-aqua-glow rounded-xl cursor-pointer transition-all duration-300"
+                      onClick={() => {
+                        navigate('/login');
+                        setIsMobileOpen(false);
+                      }}
+                    >
+                      <span>Launch App</span>
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>

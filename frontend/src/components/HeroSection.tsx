@@ -70,11 +70,6 @@ declare module '@react-three/fiber' {
     flowParticleMaterial: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
       ref?: React.Ref<any>;
       uTime?: number;
-      uDepthColor?: THREE.Color;
-      uSurfaceColor?: THREE.Color;
-      uGlowColor?: THREE.Color;
-      uFogNear?: number;
-      uFogFar?: number;
       transparent?: boolean;
       depthWrite?: boolean;
       blending?: THREE.Blending;
@@ -178,54 +173,31 @@ function LightRays() {
   );
 }
 
-// Realistic Underwater Particles Component
-function FlowingParticles({ count = 800 }) {
+// Optimized Particles Component
+function FlowingParticles({ count = 400 }) {
   const meshRef = useRef<THREE.Points>(null);
   const materialRef = useRef<any>(null);
 
-  const { positions, scales, speeds, offsets, types } = useMemo(() => {
+  const { positions, scales, speeds, offsets } = useMemo(() => {
     const positions = new Float32Array(count * 3);
     const scales = new Float32Array(count);
     const speeds = new Float32Array(count);
     const offsets = new Float32Array(count);
-    const types = new Float32Array(count);
-
-    // Distribution: 40% sediment, 50% plankton, 10% debris
-    const sedimentCount = Math.floor(count * 0.4);
-    const planktonCount = Math.floor(count * 0.5);
 
     for (let i = 0; i < count; i++) {
-      // Distribute in a larger volume with depth variation
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.pow(Math.random(), 0.7) * 12 + 1; // More particles near center
-      const depth = Math.random() * 20 - 5; // Depth variation
+      const radius = Math.pow(Math.random(), 0.6) * 10 + 2;
       
       positions[i * 3] = Math.cos(angle) * radius;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 30;
-      positions[i * 3 + 2] = Math.sin(angle) * radius * 0.6 + depth;
+      positions[i * 3 + 2] = Math.sin(angle) * radius * 0.5 - 5;
 
-      // Assign type and properties based on distribution
-      if (i < sedimentCount) {
-        // Sediment: tiny, slow
-        types[i] = 0;
-        scales[i] = Math.random() * 4 + 2;
-        speeds[i] = Math.random() * 0.15 + 0.05;
-      } else if (i < sedimentCount + planktonCount) {
-        // Plankton: small, medium speed, glowy
-        types[i] = 1;
-        scales[i] = Math.random() * 8 + 4;
-        speeds[i] = Math.random() * 0.4 + 0.15;
-      } else {
-        // Debris: larger, slower
-        types[i] = 2;
-        scales[i] = Math.random() * 12 + 8;
-        speeds[i] = Math.random() * 0.1 + 0.05;
-      }
-
+      scales[i] = Math.random() * 6 + 3;
+      speeds[i] = Math.random() * 0.3 + 0.1;
       offsets[i] = Math.random() * Math.PI * 2;
     }
 
-    return { positions, scales, speeds, offsets, types };
+    return { positions, scales, speeds, offsets };
   }, [count]);
 
   useFrame((state) => {
@@ -241,7 +213,6 @@ function FlowingParticles({ count = 800 }) {
         <bufferAttribute attach="attributes-aScale" args={[scales, 1]} />
         <bufferAttribute attach="attributes-aSpeed" args={[speeds, 1]} />
         <bufferAttribute attach="attributes-aOffset" args={[offsets, 1]} />
-        <bufferAttribute attach="attributes-aType" args={[types, 1]} />
       </bufferGeometry>
       <flowParticleMaterial
         ref={materialRef}
@@ -253,30 +224,20 @@ function FlowingParticles({ count = 800 }) {
   );
 }
 
-// Realistic Bubble Component with physics
-function Bubbles({ count = 80 }) {
+// Simplified Bubble Component
+function Bubbles({ count = 30 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   const bubbleData = useMemo(() => {
-    return Array.from({ length: count }, () => {
-      const baseScale = Math.random();
-      return {
-        x: (Math.random() - 0.5) * 20,
-        y: Math.random() * 30 - 15,
-        z: (Math.random() - 0.5) * 15 - 5,
-        // Smaller bubbles are more common
-        scale: Math.pow(baseScale, 2) * 0.2 + 0.03,
-        // Smaller bubbles rise slower (realistic physics)
-        speed: (0.15 + Math.pow(baseScale, 0.5) * 0.4),
-        wobbleFreq: 1.5 + Math.random() * 2,
-        wobbleAmp: 0.1 + Math.random() * 0.15,
-        phase: Math.random() * Math.PI * 2,
-        // Some bubbles merge/split - size oscillation
-        pulseSpeed: 2 + Math.random() * 3,
-        pulseAmp: 0.05 + Math.random() * 0.1,
-      };
-    });
+    return Array.from({ length: count }, () => ({
+      x: (Math.random() - 0.5) * 15,
+      y: Math.random() * 30 - 15,
+      z: (Math.random() - 0.5) * 10 - 5,
+      scale: Math.random() * 0.15 + 0.05,
+      speed: Math.random() * 0.3 + 0.15,
+      phase: Math.random() * Math.PI * 2,
+    }));
   }, [count]);
 
   useFrame((state) => {
@@ -285,31 +246,12 @@ function Bubbles({ count = 80 }) {
     const t = state.clock.elapsedTime;
 
     bubbleData.forEach((bubble, i) => {
-      // Realistic rising with acceleration near surface
-      const rawY = bubble.y + t * bubble.speed;
-      const y = ((rawY + 15) % 30) - 15;
+      const y = ((bubble.y + t * bubble.speed + 15) % 30) - 15;
+      const wobbleX = Math.sin(t * 1.5 + bubble.phase) * 0.15;
+      const wobbleZ = Math.cos(t + bubble.phase) * 0.1;
       
-      // Surface approach causes faster rise and more wobble
-      const surfaceProximity = Math.max(0, (y + 5) / 10);
-      const speedBoost = 1 + surfaceProximity * 0.5;
-      
-      // Helical path (bubbles spiral as they rise)
-      const spiralAngle = t * bubble.wobbleFreq + bubble.phase + y * 0.3;
-      const wobbleRadius = bubble.wobbleAmp * (1 + surfaceProximity * 0.5);
-      const wobbleX = Math.sin(spiralAngle) * wobbleRadius;
-      const wobbleZ = Math.cos(spiralAngle) * wobbleRadius * 0.7;
-      
-      // Bubbles expand as they rise (pressure change)
-      const depthScale = 1 + surfaceProximity * 0.3;
-      // Pulsing effect (surface tension)
-      const pulse = 1 + Math.sin(t * bubble.pulseSpeed + bubble.phase) * bubble.pulseAmp;
-      
-      dummy.position.set(
-        bubble.x + wobbleX,
-        y * speedBoost,
-        bubble.z + wobbleZ
-      );
-      dummy.scale.setScalar(bubble.scale * depthScale * pulse);
+      dummy.position.set(bubble.x + wobbleX, y, bubble.z + wobbleZ);
+      dummy.scale.setScalar(bubble.scale);
       dummy.updateMatrix();
       meshRef.current!.setMatrixAt(i, dummy.matrix);
     });
@@ -319,19 +261,11 @@ function Bubbles({ count = 80 }) {
 
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-      <sphereGeometry args={[1, 24, 24]} />
-      <meshPhysicalMaterial
+      <sphereGeometry args={[1, 12, 12]} />
+      <meshBasicMaterial
         color="#48cae4"
         transparent
-        opacity={0.12}
-        roughness={0}
-        metalness={0}
-        transmission={0.95}
-        thickness={0.3}
-        ior={1.33} // Water's index of refraction
-        clearcoat={1}
-        clearcoatRoughness={0}
-        envMapIntensity={0.5}
+        opacity={0.15}
       />
     </instancedMesh>
   );

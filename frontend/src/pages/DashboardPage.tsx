@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@meshsdk/react';
-import { LogOut, Settings, Bot, TrendingUp, Shield, Zap } from 'lucide-react';
+import { LogOut, Settings, Bot, TrendingUp, Shield, Zap, RefreshCw } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { wallet, connected, disconnect } = useWallet();
+  const { user, logout, isLoading } = useAuth();
   const [walletAddress, setWalletAddress] = useState<string>('');
 
   // Get wallet address when connected
@@ -21,13 +23,16 @@ export default function DashboardPage() {
         } catch (err) {
           console.error('Failed to get address:', err);
         }
+      } else if (user?.walletAddress) {
+        // Fall back to stored wallet address
+        setWalletAddress(user.walletAddress);
       }
     };
     getAddress();
-  }, [connected, wallet]);
+  }, [connected, wallet, user]);
 
-  const handleLogout = () => {
-    disconnect();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -35,16 +40,13 @@ export default function DashboardPage() {
     return `${address.slice(0, 8)}...${address.slice(-6)}`;
   };
 
-  // Redirect if not connected
-  if (!connected) {
+  // Loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foam-white mb-4">Not Connected</h1>
-          <p className="text-sea-mist mb-6">Please connect your wallet to access the dashboard</p>
-          <button className="btn-primary" onClick={() => navigate('/login')}>
-            <span>Connect Wallet</span>
-          </button>
+          <RefreshCw className="w-10 h-10 text-aqua-glow animate-spin mx-auto mb-4" />
+          <p className="text-sea-mist">Loading your dashboard...</p>
         </div>
       </div>
     );

@@ -4,3 +4,8 @@ artifacts/
 build/
 # Aiken's default documentation export
 docs/
+
+# Scripts
+scripts/node_modules/
+scripts/.env
+scripts/deployment.json
