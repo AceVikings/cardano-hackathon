@@ -52,14 +52,13 @@ router.get("/", authenticate, async (req, res) => {
 
     // Get the wallet details
     const { info, wallet } = await sdk.wallet.getWallet(walletInfo.id, 0); // 0 for preprod
-
     // Save to user
     user.developerWallet = {
       initialized: true,
       walletId: walletInfo.id,
       networkId: 0,
-      paymentAddress: info.wallet.addresses.baseAddressBech32,
-      stakeAddress: info.wallet.addresses.rewardAddressBech32,
+      paymentAddress: wallet.addresses.baseAddressBech32,
+      stakeAddress: wallet.addresses.rewardAddressBech32,
       createdAt: new Date(),
     };
 
@@ -70,8 +69,8 @@ router.get("/", authenticate, async (req, res) => {
       message: "Developer wallet created",
       wallet: {
         walletId: walletInfo.id,
-        paymentAddress: info.wallet.addresses.baseAddressBech32,
-        stakeAddress: info.wallet.addresses.rewardAddressBech32,
+        paymentAddress: wallet.addresses.baseAddressBech32,
+        stakeAddress: wallet.addresses.rewardAddressBech32,
         createdAt: user.developerWallet.createdAt,
       },
     });
