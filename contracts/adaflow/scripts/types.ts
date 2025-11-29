@@ -3,10 +3,12 @@
  * TypeScript representations of the Aiken types for the agent-governed custodial wallet
  */
 
-import { mConStr, builtinByteString } from '@meshsdk/core';
-
-// MeshSDK uses mConStr for constructor data
-type Data = ReturnType<typeof mConStr>;
+// MeshSDK PlutusData format uses 'alternative' for constructor index
+// This matches the native toPlutusData function format
+interface PlutusData {
+  alternative: number;
+  fields: unknown[];
+}
 
 // ============================================================================
 // Wallet Datum (matching Aiken WalletDatum)
@@ -19,12 +21,17 @@ export interface WalletDatum {
 
 /**
  * Convert WalletDatum to Plutus Data format
+ * Uses MeshSDK's native format: { alternative: N, fields: [...] }
+ * Strings become bytes, arrays become lists
  */
-export function walletDatumToData(datum: WalletDatum): Data {
-  return mConStr(0, [
-    builtinByteString(datum.owner),
-    datum.approvedAgents.map(agent => builtinByteString(agent)),
-  ]);
+export function walletDatumToData(datum: WalletDatum): PlutusData {
+  return {
+    alternative: 0,
+    fields: [
+      datum.owner,  // Hex string becomes bytes
+      datum.approvedAgents,  // Array of hex strings becomes list of bytes
+    ],
+  };
 }
 
 // ============================================================================
@@ -48,19 +55,20 @@ export type WalletRedeemer =
 
 /**
  * Convert WalletRedeemer to Plutus Data format
+ * Uses MeshSDK's native format: { alternative: N, fields: [...] }
  */
-export function walletRedeemerToData(redeemer: WalletRedeemer): Data {
+export function walletRedeemerToData(redeemer: WalletRedeemer): PlutusData {
   switch (redeemer.type) {
     case WalletRedeemerType.Deposit:
-      return mConStr(0, []);
+      return { alternative: 0, fields: [] };
     case WalletRedeemerType.AgentSpend:
-      return mConStr(1, []);
+      return { alternative: 1, fields: [] };
     case WalletRedeemerType.UserWithdraw:
-      return mConStr(2, []);
+      return { alternative: 2, fields: [] };
     case WalletRedeemerType.AddAgent:
-      return mConStr(3, [builtinByteString(redeemer.agent)]);
+      return { alternative: 3, fields: [redeemer.agent] };
     case WalletRedeemerType.RemoveAgent:
-      return mConStr(4, [builtinByteString(redeemer.agent)]);
+      return { alternative: 4, fields: [redeemer.agent] };
     default:
       throw new Error('Unknown redeemer type');
   }
