@@ -100,39 +100,27 @@ class CalculateMinOutputTool(BaseTool):
 
 class MinswapSwapTool(BaseTool):
     name: str = "minswap_swap"
-    description: str = "Performs a token swap on Minswap (Cardano Preprod). Args: from_token (str, e.g., 'ADA'), to_token (str, e.g., 'MIN'), amount (float), slippage (float, default 0.5). Returns transaction hash or status."
+    description: str = "Generates an unsigned transaction for a token swap on Minswap (Cardano Preprod). Args: user_address (str), from_token (str, e.g., 'ADA'), to_token (str, e.g., 'MIN'), amount (float), slippage (float, default 0.5). Returns the unsigned transaction as CBOR hex."
 
-    def _run(self, from_token: str, to_token: str, amount: float, slippage: float = 0.5) -> str:
+    def _run(self, user_address: str, from_token: str, to_token: str, amount: float, slippage: float = 0.5) -> str:
         # 1. Configuration
         project_id = os.environ.get("BLOCKFROST_PROJECT_ID")
-        mnemonic = os.environ.get("MNEMONIC")
-        print(mnemonic)
         network_env = os.environ.get("NETWORK", "preprod").lower()
 
-        if not project_id or not mnemonic:
-            return "Error: BLOCKFROST_PROJECT_ID and MNEMONIC environment variables are required."
+        if not project_id:
+            return "Error: BLOCKFROST_PROJECT_ID environment variable is required."
 
         if network_env != "preprod":
             return "Error: This tool is currently configured for Preprod only."
 
         try:
-            # 2. Setup Context and Wallet
+            # 2. Setup Context
             context = BlockFrostChainContext(
                 project_id=project_id,
                 base_url=ApiUrls.preprod.value
             )
             
-            # Load wallet
-            print("Loading wallet...")
-            
-            hd_wallet = HDWallet.from_mnemonic(mnemonic)
-            hd_wallet_spend = hd_wallet.derive_from_path("m/1852'/1815'/0'/0/0")
-            esk = ExtendedSigningKey.from_primitive(hd_wallet_spend.xprivate_key)
-            print(esk)
-            payment_skey = esk.signing_key
-            payment_vkey = esk.verification_key
-            
-            address = Address(payment_part=payment_vkey.hash(), network=Network.TESTNET)
+            address = Address.from_primitive(user_address)
             
             # 3. Prepare Assets
             # Convert amount to atomic units
@@ -174,22 +162,26 @@ class MinswapSwapTool(BaseTool):
                 address_target=address # Send back to same address
             )
 
-            # 5. Build Transaction
+            # 5. Build Unsigned Transaction
             builder = TransactionBuilder(context)
             builder.add_input_address(address)
+            
+            # Get UTXOs for the address
+            utxos = context.get_utxos(address)
+            builder.selectUtxosFrom(utxos)
             
             # Add output to order address with datum
             # Amount sent to order address = in_assets + batcher_fee + deposit
             total_value = Value(coin=batcher_fee.lovelace + deposit.lovelace)
             
-            if "lovelace" in in_assets:
-                total_value.coin += in_assets["lovelace"]
+            if "lovelace" in in_assets.__root__:
+                total_value.coin += in_assets.__root__["lovelace"]
             
             # Handle non-ADA assets in in_assets
             multi_asset = MultiAsset()
             has_tokens = False
             
-            for policy, asset_dict in in_assets.items():
+            for policy, asset_dict in in_assets.__root__.items():
                 if policy != "lovelace":
                     # policy is hex string
                     policy_id = ScriptHash(bytes.fromhex(policy))
@@ -211,12 +203,11 @@ class MinswapSwapTool(BaseTool):
                 )
             )
             
-            # 6. Sign and Submit
-            signed_tx = builder.build_and_sign([payment_skey], change_address=address)
-            context.submit_tx(signed_tx)
+            # Build unsigned transaction
+            unsigned_tx = builder.build(change_address=address)
             
-            return f"Swap transaction submitted. Tx ID: {signed_tx.id}"
+            return unsigned_tx.to_cbor().hex()
 
         except Exception as e:
             print(e);
-            return f"Error performing swap: {str(e)}"
+            return f"Error generating swap transaction: {str(e)}"

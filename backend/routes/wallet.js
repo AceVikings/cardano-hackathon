@@ -33,18 +33,13 @@ router.get("/", authenticate, async (req, res) => {
     });
 
     if (user.developerWallet?.initialized) {
-      // Get existing wallet
-      const { info, wallet } = await sdk.wallet.getWallet(
-        user.developerWallet.walletId,
-        user.developerWallet.networkId
-      );
-
+      // Return stored wallet info
       return res.json({
         success: true,
         wallet: {
           walletId: user.developerWallet.walletId,
-          paymentAddress: info.address,
-          stakeAddress: info.stakeAddress || null,
+          paymentAddress: user.developerWallet.paymentAddress,
+          stakeAddress: user.developerWallet.stakeAddress,
           createdAt: user.developerWallet.createdAt,
         },
       });
@@ -56,16 +51,15 @@ router.get("/", authenticate, async (req, res) => {
     });
 
     // Get the wallet details
-    const RESULT = await sdk.wallet.getWallet(walletInfo.id, 0); // 0 for preprod
-    const { info, wallet } = RESULT;
-    console.log(RESULT);
+    const { info, wallet } = await sdk.wallet.getWallet(walletInfo.id, 0); // 0 for preprod
+
     // Save to user
     user.developerWallet = {
       initialized: true,
       walletId: walletInfo.id,
       networkId: 0,
-      paymentAddress: info.address,
-      stakeAddress: info.stakeAddress || null,
+      paymentAddress: info.wallet.addresses.baseAddressBech32,
+      stakeAddress: info.wallet.addresses.rewardAddressBech32,
       createdAt: new Date(),
     };
 
@@ -76,8 +70,8 @@ router.get("/", authenticate, async (req, res) => {
       message: "Developer wallet created",
       wallet: {
         walletId: walletInfo.id,
-        paymentAddress: info.address,
-        stakeAddress: info.stakeAddress || null,
+        paymentAddress: info.wallet.addresses.baseAddressBech32,
+        stakeAddress: info.wallet.addresses.rewardAddressBech32,
         createdAt: user.developerWallet.createdAt,
       },
     });
