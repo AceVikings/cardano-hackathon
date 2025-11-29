@@ -1,34 +1,11 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useWallet } from '@meshsdk/react';
 import { LogOut, Settings, Zap, RefreshCw, Workflow, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import CustodialWalletCard from '../components/CustodialWalletCard';
-import WalletBalances from '../components/WalletBalances';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { wallet, connected } = useWallet();
   const { user, logout, isLoading } = useAuth();
-  const [walletAddress, setWalletAddress] = useState<string>('');
-
-  // Get wallet address when connected (from Cardano wallet, not auth user)
-  useEffect(() => {
-    const getAddress = async () => {
-      if (connected && wallet) {
-        try {
-          const addresses = await wallet.getUsedAddresses();
-          if (addresses.length > 0) {
-            setWalletAddress(addresses[0]);
-          }
-        } catch (err) {
-          console.error('Failed to get address:', err);
-        }
-      }
-    };
-    getAddress();
-  }, [connected, wallet]);
 
   const getUserDisplayName = () => {
     if (user?.displayName) return user.displayName;
@@ -39,10 +16,6 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     await logout();
     navigate('/');
-  };
-
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
   };
 
   // Loading state
@@ -66,11 +39,6 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-foam-white font-heading mb-2">
               Welcome, {getUserDisplayName()}
             </h1>
-            {walletAddress && (
-              <p className="text-sea-mist">
-                Wallet: <span className="font-mono text-aqua-glow">{truncateAddress(walletAddress)}</span>
-              </p>
-            )}
             {user?.email && (
               <p className="text-sea-mist/60 text-sm">
                 {user.email}
@@ -92,15 +60,63 @@ export default function DashboardPage() {
               onClick={handleLogout}
             >
               <LogOut className="w-5 h-5" />
-              <span className="text-sm">Disconnect</span>
+              <span className="text-sm">Sign Out</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Portfolio & Custodial Wallet Row */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-12">
-          <WalletBalances />
-          <CustodialWalletCard />
+        {/* Quick Stats */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <motion.div
+            className="glass-card p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-current-blue to-aqua-glow flex items-center justify-center">
+                <Workflow className="w-6 h-6 text-foam-white" />
+              </div>
+              <div>
+                <p className="text-sea-mist/60 text-sm">Active Agents</p>
+                <p className="text-2xl font-bold text-foam-white">0</p>
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div
+            className="glass-card p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-aqua-glow to-bioluminescent flex items-center justify-center">
+                <Zap className="w-6 h-6 text-foam-white" />
+              </div>
+              <div>
+                <p className="text-sea-mist/60 text-sm">Total Executions</p>
+                <p className="text-2xl font-bold text-foam-white">0</p>
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div
+            className="glass-card p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-bioluminescent to-seafoam flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-foam-white" />
+              </div>
+              <div>
+                <p className="text-sea-mist/60 text-sm">Success Rate</p>
+                <p className="text-2xl font-bold text-foam-white">--</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
         {/* Recent Executions */}
