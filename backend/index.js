@@ -53,9 +53,11 @@ app.get("/api/health", (req, res) => {
 app.get("/api/available-agents", (req, res) => {
   const agents = [
     {
+      id: "swap-token-agent",
       name: "Swap Token Agent",
       description:
         "Agent for generating token swap transactions on Cardano using Minswap DEX",
+      invokeUrl: "/api/agents/swap-token-agent/invoke",
       inputParameters: [
         {
           name: "fromToken",
