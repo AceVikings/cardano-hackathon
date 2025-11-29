@@ -1,0 +1,161 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useWallet } from '@meshsdk/react';
+import { LogOut, Settings, Bot, TrendingUp, Shield, Zap } from 'lucide-react';
+
+export default function DashboardPage() {
+  const navigate = useNavigate();
+  const { wallet, connected, disconnect } = useWallet();
+  const [walletAddress, setWalletAddress] = useState<string>('');
+
+  // Get wallet address when connected
+  useEffect(() => {
+    const getAddress = async () => {
+      if (connected && wallet) {
+        try {
+          const addresses = await wallet.getUsedAddresses();
+          if (addresses.length > 0) {
+            setWalletAddress(addresses[0]);
+          }
+        } catch (err) {
+          console.error('Failed to get address:', err);
+        }
+      }
+    };
+    getAddress();
+  }, [connected, wallet]);
+
+  const handleLogout = () => {
+    disconnect();
+    navigate('/');
+  };
+
+  const truncateAddress = (address: string) => {
+    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+  };
+
+  // Redirect if not connected
+  if (!connected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foam-white mb-4">Not Connected</h1>
+          <p className="text-sea-mist mb-6">Please connect your wallet to access the dashboard</p>
+          <button className="btn-primary" onClick={() => navigate('/login')}>
+            <span>Connect Wallet</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen pt-24 pb-12">
+      <div className="container mx-auto px-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <h1 className="text-3xl font-bold text-foam-white font-heading mb-2">
+              Welcome to AdaFlow
+            </h1>
+            <p className="text-sea-mist">
+              Wallet: <span className="font-mono text-aqua-glow">{walletAddress ? truncateAddress(walletAddress) : ''}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <motion.button
+              className="p-3 rounded-xl glass text-sea-mist hover:text-foam-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-5 h-5" />
+            </motion.button>
+            <motion.button
+              className="flex items-center gap-2 px-4 py-3 rounded-xl glass text-sea-mist hover:text-foam-white transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleLogout}
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm">Disconnect</span>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid md:grid-cols-4 gap-6 mb-12">
+          {[
+            { label: 'Portfolio Value', value: '$12,450', change: '+5.2%', positive: true },
+            { label: 'Active Agents', value: '3', change: 'Running', positive: true },
+            { label: '24h Profit', value: '$234', change: '+2.1%', positive: true },
+            { label: 'Total Trades', value: '156', change: 'This month', positive: true },
+          ].map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              className="glass-card p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <p className="text-sea-mist/60 text-sm mb-2">{stat.label}</p>
+              <p className="text-3xl font-bold text-foam-white font-heading">{stat.value}</p>
+              <p className={`text-sm mt-2 ${stat.positive ? 'text-bioluminescent' : 'text-coral'}`}>
+                {stat.change}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Active Agents */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-foam-white font-heading mb-6">Your Active Agents</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { name: 'Swap Agent', icon: Zap, status: 'Active', gradient: 'from-current-blue to-aqua-glow' },
+              { name: 'Yield Agent', icon: TrendingUp, status: 'Active', gradient: 'from-aqua-glow to-seafoam' },
+              { name: 'Risk Guard', icon: Shield, status: 'Monitoring', gradient: 'from-bioluminescent to-emerald-500' },
+              { name: 'Add Agent', icon: Bot, status: 'Configure', gradient: 'from-sea-mist/30 to-sea-mist/10' },
+            ].map((agent, index) => {
+              const Icon = agent.icon;
+              const isAddCard = agent.name === 'Add Agent';
+              return (
+                <motion.div
+                  key={agent.name}
+                  className={`glass-card p-6 cursor-pointer ${isAddCard ? 'border-dashed' : ''}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  whileHover={{ y: -5 }}
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${agent.gradient} flex items-center justify-center mb-4`}>
+                    <Icon className="w-6 h-6 text-foam-white" />
+                  </div>
+                  <h3 className="font-bold text-foam-white mb-1">{agent.name}</h3>
+                  <p className={`text-sm ${isAddCard ? 'text-sea-mist/40' : 'text-bioluminescent'}`}>
+                    {agent.status}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Coming Soon Notice */}
+        <motion.div
+          className="glass-card p-8 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <h3 className="text-xl font-bold text-foam-white font-heading mb-2">
+            Full Dashboard Coming Soon
+          </h3>
+          <p className="text-sea-mist">
+            We're building powerful tools to help you manage your AI agents. Stay tuned!
+          </p>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

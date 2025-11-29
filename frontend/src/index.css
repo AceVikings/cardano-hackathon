@@ -1,1 +1,306 @@
 @import "tailwindcss";
+
+@theme {
+  /* Aquatic Flow Colors */
+  --color-deep-ocean: #020a14;
+  --color-abyss: #061420;
+  --color-current-blue: #0891b2;
+  --color-aqua-glow: #22d3ee;
+  --color-foam-white: #f0fdff;
+  --color-sea-mist: #a5d8e6;
+  --color-bioluminescent: #14f0b5;
+  --color-coral: #ff6b8a;
+  --color-midnight-blue: #0c2340;
+
+  /* Legacy aliases for compatibility */
+  --color-cosmic-black: #020a14;
+  --color-nightsteel: #061420;
+  --color-neon-violet: #0891b2;
+  --color-cyan-plasma: #22d3ee;
+  --color-pure-white: #f0fdff;
+  --color-light-slate: #a5d8e6;
+  --color-success: #14f0b5;
+  --color-warning: #ff6b8a;
+  --color-dark-slate: #0c2340;
+
+  /* Fonts */
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-deep-ocean);
+    color: var(--color-sea-mist);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Underwater caustics overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='caustics'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='15' xChannelSelector='R' yChannelSelector='B'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23caustics)' fill='%2322d3ee' opacity='0.02'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 9999;
+    animation: caustics-drift 8s ease-in-out infinite;
+  }
+
+  /* Custom scrollbar - flowing water style */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-deep-ocean);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      var(--color-current-blue),
+      var(--color-aqua-glow),
+      var(--color-bioluminescent)
+    );
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  /* Section spacing */
+  .section {
+    padding-top: 120px;
+    padding-bottom: 120px;
+  }
+
+  /* Flowing gradient text */
+  .gradient-text {
+    background: linear-gradient(
+      135deg,
+      var(--color-current-blue),
+      var(--color-aqua-glow),
+      var(--color-bioluminescent)
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: flow-gradient 4s ease infinite;
+  }
+
+  /* Liquid button effect */
+  .liquid-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  .liquid-btn::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, var(--color-aqua-glow) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+    opacity: 0.3;
+  }
+
+  .liquid-btn:hover::before {
+    width: 300%;
+    height: 300%;
+  }
+
+  .liquid-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 10px 40px rgba(8, 145, 178, 0.4),
+      0 0 60px rgba(34, 211, 238, 0.2),
+      inset 0 -2px 10px rgba(34, 211, 238, 0.1);
+  }
+
+  /* Melt effect on hover */
+  .melt-hover {
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  .melt-hover:hover {
+    filter: url(#melt-filter);
+    transform: scaleY(1.02) translateY(-2px);
+  }
+
+  /* Ripple effect */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(circle at center, var(--color-aqua-glow) 0%, transparent 50%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+  }
+
+  .ripple:hover::after {
+    transform: scale(2);
+    opacity: 0.1;
+  }
+}
+
+@layer components {
+  /* Flowing gradient border */
+  .gradient-border {
+    position: relative;
+    background: var(--color-abyss);
+    border-radius: 16px;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(
+      135deg,
+      var(--color-current-blue),
+      var(--color-aqua-glow),
+      var(--color-bioluminescent),
+      var(--color-current-blue)
+    );
+    background-size: 300% 300%;
+    border-radius: 18px;
+    z-index: -1;
+    animation: flow-border 4s ease infinite;
+  }
+
+  /* Glass card with underwater effect */
+  .glass-card {
+    background: linear-gradient(
+      135deg,
+      rgba(6, 20, 32, 0.8) 0%,
+      rgba(8, 145, 178, 0.1) 100%
+    );
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(34, 211, 238, 0.15);
+    border-radius: 20px;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(34, 211, 238, 0.3);
+    box-shadow: 
+      0 25px 50px -12px rgba(8, 145, 178, 0.25),
+      inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    transform: translateY(-4px);
+  }
+
+  /* Wave divider */
+  .wave-divider {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    overflow: hidden;
+  }
+
+  .wave-divider svg {
+    position: absolute;
+    bottom: 0;
+    width: 200%;
+    height: 100%;
+    animation: wave-flow 10s linear infinite;
+  }
+}
+
+/* Animations */
+@keyframes flow-gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes flow-border {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes wave-flow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes caustics-drift {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes float-up {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(100%) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100vh) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
