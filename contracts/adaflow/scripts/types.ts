@@ -40,14 +40,16 @@ export function walletDatumToData(datum: WalletDatum): PlutusData {
 
 export enum WalletRedeemerType {
   Deposit = 0,
-  AgentSpend = 1,
-  UserWithdraw = 2,
-  AddAgent = 3,
-  RemoveAgent = 4,
+  AgentDeposit = 1,
+  AgentSpend = 2,
+  UserWithdraw = 3,
+  AddAgent = 4,
+  RemoveAgent = 5,
 }
 
 export type WalletRedeemer =
   | { type: WalletRedeemerType.Deposit }
+  | { type: WalletRedeemerType.AgentDeposit }
   | { type: WalletRedeemerType.AgentSpend }
   | { type: WalletRedeemerType.UserWithdraw }
   | { type: WalletRedeemerType.AddAgent; agent: string }
@@ -61,14 +63,16 @@ export function walletRedeemerToData(redeemer: WalletRedeemer): PlutusData {
   switch (redeemer.type) {
     case WalletRedeemerType.Deposit:
       return { alternative: 0, fields: [] };
-    case WalletRedeemerType.AgentSpend:
+    case WalletRedeemerType.AgentDeposit:
       return { alternative: 1, fields: [] };
-    case WalletRedeemerType.UserWithdraw:
+    case WalletRedeemerType.AgentSpend:
       return { alternative: 2, fields: [] };
+    case WalletRedeemerType.UserWithdraw:
+      return { alternative: 3, fields: [] };
     case WalletRedeemerType.AddAgent:
-      return { alternative: 3, fields: [redeemer.agent] };
-    case WalletRedeemerType.RemoveAgent:
       return { alternative: 4, fields: [redeemer.agent] };
+    case WalletRedeemerType.RemoveAgent:
+      return { alternative: 5, fields: [redeemer.agent] };
     default:
       throw new Error('Unknown redeemer type');
   }

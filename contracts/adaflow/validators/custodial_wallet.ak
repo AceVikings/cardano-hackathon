@@ -38,6 +38,8 @@ pub type WalletDatum {
 pub type WalletRedeemer {
   /// User deposits funds (owner signature required)
   Deposit
+  /// Agent deposits funds back to the wallet (approved agent signature required)
+  AgentDeposit
   /// Agent spends funds (approved agent signature required)
   AgentSpend
   /// User withdraws their funds (owner signature required)  
@@ -117,6 +119,27 @@ validator custodial_wallet {
           out_datum.owner == wallet_datum.owner,
           out_datum.approved_agents == wallet_datum.approved_agents,
           // Output must have more or equal value
+          lovelace_of(continuing_output.value) >= lovelace_of(own_value),
+        }
+      }
+      
+      // ======================================================================
+      // AGENT DEPOSIT - Agent deposits funds back to the wallet
+      // ======================================================================
+      AgentDeposit -> {
+        // One of the approved agents must sign
+        expect agent_has_signed(tx.extra_signatories, wallet_datum.approved_agents)
+        
+        // Must have continuing output with same datum
+        expect Some(continuing_output) = find_continuing_output(tx.outputs, own_address)
+        expect InlineDatum(out_datum_data) = continuing_output.datum
+        expect out_datum: WalletDatum = out_datum_data
+        
+        // Datum must remain unchanged, value must increase or stay same
+        and {
+          out_datum.owner == wallet_datum.owner,
+          out_datum.approved_agents == wallet_datum.approved_agents,
+          // Output must have more or equal value (agent is adding funds)
           lovelace_of(continuing_output.value) >= lovelace_of(own_value),
         }
       }

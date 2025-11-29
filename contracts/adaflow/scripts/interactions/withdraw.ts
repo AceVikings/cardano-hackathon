@@ -1,6 +1,6 @@
 /**
  * AdaFlow - User Withdraw Script
- * User withdraws their funds from the custodial wallet
+ * User withdraws all their funds (ADA + tokens) from the custodial wallet
  */
 
 import 'dotenv/config';
@@ -20,6 +20,11 @@ import {
   lovelaceToAda,
 } from '../types.js';
 import { getCustodialWalletScript } from '../blueprint.js';
+
+interface Asset {
+  unit: string;
+  quantity: string;
+}
 
 async function main() {
   console.log('💸 AdaFlow - User Withdraw from Custodial Wallet');
@@ -50,12 +55,26 @@ async function main() {
 
   // Use the first UTXO (in production, would filter by owner)
   const targetUtxo = scriptUtxos[0];
+  const utxoAmounts: Asset[] = targetUtxo.output.amount;
+  
   const inputLovelace = BigInt(
-    targetUtxo.output.amount.find((a: any) => a.unit === 'lovelace')?.quantity ?? 0
+    utxoAmounts.find((a: Asset) => a.unit === 'lovelace')?.quantity ?? 0
   );
+  const tokens = utxoAmounts.filter((a: Asset) => a.unit !== 'lovelace');
 
   console.log(`   Target UTXO: ${targetUtxo.input.txHash}#${targetUtxo.input.outputIndex}`);
-  console.log(`   Balance to Withdraw: ${lovelaceToAda(inputLovelace)} ADA`);
+  console.log(`   ADA to Withdraw: ${lovelaceToAda(inputLovelace)} ADA`);
+  
+  if (tokens.length > 0) {
+    console.log(`   Tokens to Withdraw: ${tokens.length} asset(s)`);
+    for (const token of tokens) {
+      // Token unit format: policyId + assetName (hex)
+      const policyId = token.unit.slice(0, 56);
+      const assetName = token.unit.slice(56);
+      const assetNameStr = assetName ? Buffer.from(assetName, 'hex').toString('utf8') : '(no name)';
+      console.log(`     - ${token.quantity} ${assetNameStr} (${policyId.slice(0, 8)}...)`);
+    }
+  }
 
   // Get user address
   const userAddresses = await userWallet.getUsedAddresses();
@@ -64,7 +83,7 @@ async function main() {
   // Get user UTXOs for collateral
   const userUtxos = await userWallet.getUtxos();
   const collateralUtxo = userUtxos.find((utxo: any) => {
-    const lovelace = utxo.output.amount.find((a: any) => a.unit === 'lovelace');
+    const lovelace = utxo.output.amount.find((a: Asset) => a.unit === 'lovelace');
     const qty = BigInt(lovelace?.quantity ?? 0);
     return qty >= 5_000_000n;
   });
@@ -97,10 +116,8 @@ async function main() {
     .txInInlineDatumPresent()
     .txInRedeemerValue(redeemer)
     .txInScript(scriptCode)
-    // Send all funds to user
-    .txOut(userAddress, [
-      { unit: 'lovelace', quantity: inputLovelace.toString() }
-    ])
+    // Send ALL funds (ADA + tokens) to user
+    .txOut(userAddress, utxoAmounts)
     // Collateral
     .txInCollateral(
       collateralUtxo.input.txHash,
@@ -122,7 +139,10 @@ async function main() {
 
   console.log(`\n✅ Withdrawal successful!`);
   console.log(`   TX Hash: ${txHash}`);
-  console.log(`   Amount: ${lovelaceToAda(inputLovelace)} ADA`);
+  console.log(`   ADA: ${lovelaceToAda(inputLovelace)} ADA`);
+  if (tokens.length > 0) {
+    console.log(`   Tokens: ${tokens.length} asset(s)`);
+  }
   console.log(`\n🔗 View on CardanoScan:`);
   console.log(`   https://preprod.cardanoscan.io/transaction/${txHash}`);
 
