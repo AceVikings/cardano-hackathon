@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { Zap, Send, Play, ChevronDown } from 'lucide-react';
+import { Zap, Send, Play } from 'lucide-react';
 
 export interface AgentNodeData {
   label: string;
@@ -31,18 +31,28 @@ const statusColors = {
 // Custom handle styles for different connection types
 const handleStyles = {
   trigger: '!w-3 !h-3 !bg-bioluminescent !border-2 !border-deep-ocean',
-  data: '!w-3 !h-3 !bg-aqua-glow !border-2 !border-deep-ocean',
+  input: '!w-2.5 !h-2.5 !bg-aqua-glow !border-2 !border-deep-ocean',
+  output: '!w-2.5 !h-2.5 !bg-coral !border-2 !border-deep-ocean',
 };
 
 function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
   const Icon = iconMap[data.type] || Zap;
   const gradient = gradientMap[data.type] || gradientMap.swap;
   const statusColor = statusColors[data.status];
+  
+  const inputs = data.inputParameters || [];
+  const output = data.output;
+  
+  // Calculate node height based on number of inputs/outputs
+  const handleCount = Math.max(inputs.length, output ? 1 : 0);
+  const handleSpacing = 28; // pixels between handles
+  const minContentHeight = 80;
+  const calculatedHeight = Math.max(minContentHeight, handleCount * handleSpacing + 40);
 
   return (
     <div
       className={`
-        relative min-w-[200px] rounded-xl transition-all duration-200
+        relative min-w-[220px] rounded-xl transition-all duration-200
         ${selected 
           ? 'ring-2 ring-aqua-glow shadow-lg shadow-aqua-glow/30' 
           : 'ring-1 ring-sea-mist/20'
@@ -62,23 +72,15 @@ function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
         style={{ top: -6 }}
       />
 
-      {/* Data Input Handle (Left) */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="data-in"
-        className={handleStyles.data}
-      />
+      {/* Trigger Input Label */}
+      <div className="absolute -top-5 left-1/2 -translate-x-1/2">
+        <span className="text-[10px] text-bioluminescent/70 flex items-center gap-0.5">
+          <Play className="w-2.5 h-2.5" /> trigger
+        </span>
+      </div>
 
       {/* Node Content */}
-      <div className="p-4">
-        {/* Trigger Input Label */}
-        <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-          <span className="text-[10px] text-bioluminescent/70 flex items-center gap-0.5">
-            <Play className="w-2.5 h-2.5" /> trigger
-          </span>
-        </div>
-
+      <div className="p-4" style={{ minHeight: calculatedHeight }}>
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
           <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center`}>
@@ -95,34 +97,75 @@ function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
 
         {/* Description */}
         {data.description && (
-          <p className="text-xs text-sea-mist/50 line-clamp-2 mb-2">{data.description}</p>
+          <p className="text-xs text-sea-mist/50 line-clamp-2 mb-3">{data.description}</p>
         )}
 
-        {/* Input/Output Labels */}
-        <div className="flex justify-between text-[10px] text-sea-mist/50 mt-2">
-          <span className="flex items-center gap-0.5">
-            <ChevronDown className="w-2.5 h-2.5 -rotate-90" /> input
-          </span>
-          <span className="flex items-center gap-0.5">
-            output <ChevronDown className="w-2.5 h-2.5 rotate-90" />
-          </span>
-        </div>
+        {/* Input/Output Section */}
+        <div className="flex justify-between gap-4 mt-2">
+          {/* Input Labels (Left side) */}
+          <div className="flex flex-col gap-1">
+            {inputs.length > 0 && (
+              <span className="text-[9px] text-sea-mist/40 uppercase tracking-wider mb-1">Inputs</span>
+            )}
+            {inputs.map((param, index) => (
+              <div 
+                key={param.name} 
+                className="flex items-center gap-1.5"
+                style={{ height: handleSpacing - 4, marginTop: index === 0 ? 0 : 4 }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-aqua-glow/60" />
+                <span className="text-[10px] text-aqua-glow/80 font-mono">{param.name}</span>
+                <span className="text-[9px] text-sea-mist/40">({param.type})</span>
+              </div>
+            ))}
+          </div>
 
-        {/* Trigger Output Label */}
-        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2">
-          <span className="text-[10px] text-bioluminescent/70 flex items-center gap-0.5">
-            <Play className="w-2.5 h-2.5" /> next
-          </span>
+          {/* Output Labels (Right side) */}
+          <div className="flex flex-col gap-1 items-end">
+            {output && (
+              <>
+                <span className="text-[9px] text-sea-mist/40 uppercase tracking-wider mb-1">Output</span>
+                <div 
+                  className="flex items-center gap-1.5"
+                  style={{ height: handleSpacing - 4 }}
+                >
+                  <span className="text-[9px] text-sea-mist/40">({output.type})</span>
+                  <span className="text-[10px] text-coral/80 font-mono">{output.name}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-coral/60" />
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Data Output Handle (Right) */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="data-out"
-        className={handleStyles.data}
-      />
+      {/* Dynamic Input Handles (Left side) */}
+      {inputs.map((param, index) => {
+        // Calculate vertical position for each input handle
+        // Start after header (~70px) and space evenly
+        const topOffset = 95 + (index * handleSpacing);
+        return (
+          <Handle
+            key={`input-${param.name}`}
+            type="target"
+            position={Position.Left}
+            id={`input-${param.name}`}
+            className={handleStyles.input}
+            style={{ top: topOffset }}
+          />
+        );
+      })}
+
+      {/* Output Handle (Right side) */}
+      {output && (
+        <Handle
+          type="source"
+          position={Position.Right}
+          id={`output-${output.name}`}
+          className={handleStyles.output}
+          style={{ top: 95 }}
+        />
+      )}
 
       {/* Trigger Output Handle (Bottom) */}
       <Handle
@@ -132,6 +175,13 @@ function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
         className={handleStyles.trigger}
         style={{ bottom: -6 }}
       />
+
+      {/* Trigger Output Label */}
+      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2">
+        <span className="text-[10px] text-bioluminescent/70 flex items-center gap-0.5">
+          <Play className="w-2.5 h-2.5" /> next
+        </span>
+      </div>
     </div>
   );
 }

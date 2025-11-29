@@ -156,14 +156,8 @@ export interface AvailableAgentsResponse {
  * Get available agents from the API
  */
 export async function getAvailableAgents(): Promise<AvailableAgent[]> {
-  const response = await fetch(`${API_BASE_URL}/available-agents`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch available agents');
-  }
-  
-  const data: AvailableAgentsResponse = await response.json();
-  return data.agents;
+  const response = await apiRequest<AvailableAgentsResponse>('/available-agents');
+  return response.agents;
 }
 
 export { apiRequest };
