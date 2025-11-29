@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const { authenticate } = require("../middleware/auth");
+const { Web3Sdk } = require("@meshsdk/web3-sdk");
+const { BlockfrostProvider } = require("@meshsdk/provider");
 
 /**
  * Minswap Swap Route
@@ -54,6 +57,240 @@ const TOKENS = {
     },
   },
 };
+
+/**
+ * @route POST /api/swap/minswap/swap
+ * @desc Execute a swap using authenticated user's wallet (auto-fetches wallet and UTXOs)
+ * @auth Required - Bearer token
+ * @body {
+ *   assetIn: "lovelace" | "policyId.tokenName",
+ *   assetOut: "lovelace" | "policyId.tokenName", 
+ *   amountIn: string (in lovelace or smallest unit),
+ *   slippagePercent?: number (default 1%)
+ * }
+ */
+router.post("/minswap/swap", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    const { assetIn, assetOut, amountIn, slippagePercent = 1 } = req.body;
+
+    // Validate user has wallet
+    if (!user.developerWallet?.initialized) {
+      return res.status(400).json({
+        success: false,
+        error: "Wallet not initialized. Please create a wallet first.",
+      });
+    }
+
+    // Validate required fields
+    if (!assetIn || !assetOut || !amountIn) {
+      return res.status(400).json({
+        success: false,
+        error: "assetIn, assetOut, and amountIn are required",
+      });
+    }
+
+    const walletAddress = user.developerWallet.paymentAddress;
+    const walletId = user.developerWallet.walletId;
+    const network = "preprod";
+    const config = MINSWAP_CONFIG[network];
+
+    const blockfrostApiKey = process.env.BLOCKFROST_API_KEY_PREPROD;
+    if (!blockfrostApiKey) {
+      return res.status(500).json({
+        success: false,
+        error: "Blockfrost API key not configured",
+      });
+    }
+
+    // Initialize the Web3 SDK for signing
+    const provider = new BlockfrostProvider(blockfrostApiKey);
+    const sdk = new Web3Sdk({
+      projectId: process.env.UTXOS_PROJECT_ID,
+      apiKey: process.env.UTXOS_API_KEY,
+      privateKey: process.env.UTXOS_PRIVATE_KEY,
+      network: "preprod",
+      fetcher: provider,
+      submitter: provider,
+    });
+
+    // Load Minswap SDK
+    const { minswapSDK, blockfrostAPI, lucidLib } = await loadModules();
+    const { 
+      ADA, 
+      BlockfrostAdapter, 
+      NetworkId, 
+      DexV2, 
+      DexV2Calculation,
+      OrderV2,
+      calculateAmountWithSlippageTolerance,
+      Asset 
+    } = minswapSDK;
+    const { BlockFrostAPI } = blockfrostAPI;
+    const { Lucid, Blockfrost } = lucidLib;
+
+    // Initialize Blockfrost adapter for Minswap
+    const blockfrostApi = new BlockFrostAPI({
+      projectId: blockfrostApiKey,
+      network: config.blockfrostNetwork,
+    });
+    
+    const adapter = new BlockfrostAdapter(
+      NetworkId.TESTNET,
+      blockfrostApi
+    );
+
+    // Parse assets
+    const parsedAssetIn = parseAssetString(assetIn, ADA);
+    const parsedAssetOut = parseAssetString(assetOut, ADA);
+
+    // Find pool
+    const pool = await adapter.getV2PoolByPair(parsedAssetIn, parsedAssetOut);
+    
+    if (!pool) {
+      return res.status(404).json({
+        success: false,
+        error: "No liquidity pool found for the specified token pair",
+      });
+    }
+
+    // Calculate swap amounts
+    const amountInBigInt = BigInt(amountIn);
+
+    // Determine swap direction
+    const isAtoB = Asset.equals(parsedAssetIn, pool.assetA) || 
+      (parsedAssetIn.policyId === "" && pool.assetA.policyId === "");
+
+    const amountOut = DexV2Calculation.calculateAmountOut({
+      reserveIn: isAtoB ? pool.reserveA : pool.reserveB,
+      reserveOut: isAtoB ? pool.reserveB : pool.reserveA,
+      amountIn: amountInBigInt,
+      tradingFeeNumerator: isAtoB ? pool.feeA[0] : pool.feeB[0],
+    });
+
+    // Apply slippage tolerance
+    const minimumAmountOut = calculateAmountWithSlippageTolerance({
+      slippageTolerancePercent: slippagePercent,
+      amount: amountOut,
+      type: "down",
+    });
+
+    // Calculate price impact
+    const priceImpact = calculatePriceImpact(
+      amountInBigInt,
+      amountOut,
+      isAtoB ? pool.reserveA : pool.reserveB,
+      isAtoB ? pool.reserveB : pool.reserveA
+    );
+
+    // Get UTXOs from Blockfrost
+    const utxosResponse = await fetch(
+      `${config.blockfrostUrl}/addresses/${walletAddress}/utxos`,
+      { headers: { project_id: blockfrostApiKey } }
+    );
+    
+    if (!utxosResponse.ok) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to fetch UTXOs from Blockfrost",
+      });
+    }
+
+    const blockfrostUtxos = await utxosResponse.json();
+    
+    // Check balance
+    let totalLovelace = 0n;
+    for (const utxo of blockfrostUtxos) {
+      for (const amount of utxo.amount) {
+        if (amount.unit === "lovelace") {
+          totalLovelace += BigInt(amount.quantity);
+        }
+      }
+    }
+
+    // Required: swap amount + batcher fee (2 ADA) + deposit (2 ADA) + network fee (~0.3 ADA)
+    const requiredLovelace = amountInBigInt + 4_300_000n;
+    if (assetIn === "lovelace" && totalLovelace < requiredLovelace) {
+      return res.status(400).json({
+        success: false,
+        error: `Insufficient balance. Need ${Number(requiredLovelace) / 1_000_000} ADA, have ${Number(totalLovelace) / 1_000_000} ADA`,
+      });
+    }
+
+    // Convert Blockfrost UTXOs to Lucid format
+    const lucidUtxos = blockfrostUtxos.map(utxo => ({
+      txHash: utxo.tx_hash,
+      outputIndex: utxo.output_index,
+      assets: utxo.amount.reduce((acc, a) => {
+        acc[a.unit === "lovelace" ? "lovelace" : a.unit] = BigInt(a.quantity);
+        return acc;
+      }, {}),
+      address: utxo.address,
+      datumHash: utxo.data_hash || null,
+      datum: utxo.inline_datum || null,
+      scriptRef: null,
+    }));
+
+    // Initialize Lucid for tx building with read-only wallet
+    const lucid = new Lucid({
+      provider: new Blockfrost(config.blockfrostUrl, blockfrostApiKey),
+    });
+    
+    // Set up read-only wallet with the user's address and UTXOs
+    lucid.selectReadOnlyWallet({
+      address: walletAddress,
+      utxos: lucidUtxos,
+    });
+
+    const dexV2 = new DexV2(lucid, adapter);
+
+    // Build the swap order transaction
+    const txComplete = await dexV2.createBulkOrdersTx({
+      sender: walletAddress,
+      availableUtxos: lucidUtxos,
+      orderOptions: [
+        {
+          type: OrderV2.StepType.SWAP_EXACT_IN,
+          amountIn: amountInBigInt,
+          assetIn: parsedAssetIn,
+          direction: isAtoB ? OrderV2.Direction.A_TO_B : OrderV2.Direction.B_TO_A,
+          minimumAmountOut: minimumAmountOut,
+          lpAsset: pool.lpAsset,
+          isLimitOrder: false,
+          killOnFailed: false,
+        },
+      ],
+    });
+
+    // Get the unsigned transaction CBOR
+    const unsignedTxCbor = txComplete.toString();
+
+    res.json({
+      success: true,
+      unsignedTx: unsignedTxCbor,
+      txDetails: {
+        poolId: Asset.toString(pool.lpAsset),
+        assetIn: assetIn,
+        assetOut: assetOut,
+        amountIn: amountIn,
+        expectedOutput: amountOut.toString(),
+        minimumOutput: minimumAmountOut.toString(),
+        slippagePercent: slippagePercent,
+        priceImpact: priceImpact.toFixed(4),
+        batcherFee: "2000000",
+        deposit: "2000000",
+      },
+    });
+
+  } catch (error) {
+    console.error("Minswap swap error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV !== "production" ? error.stack : undefined,
+    });
+  }
+});
 
 /**
  * @route POST /api/swap/minswap/build-tx
