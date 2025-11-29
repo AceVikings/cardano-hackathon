@@ -326,6 +326,76 @@ export async function getSessions(): Promise<{ createdAt: string; expiresAt: str
   return response.sessions;
 }
 
+// ============================================================================
+// Custodial Wallet API
+// ============================================================================
+
+export interface CustodialWalletStatus {
+  initialized: boolean;
+  scriptAddress: string;
+  ownerPkh: string | null;
+  approvedAgents: Array<{
+    pkh: string;
+    name: string;
+    addedAt: string;
+  }>;
+  lastKnownBalance: {
+    lovelace: string;
+    tokens: Array<{ unit: string; quantity: string }>;
+  };
+  lastBalanceCheck: string | null;
+}
+
+/**
+ * Get custodial wallet status
+ */
+export async function getWalletStatus(): Promise<CustodialWalletStatus> {
+  const response = await apiRequest<{ success: boolean; wallet: CustodialWalletStatus }>('/wallet/status');
+  return response.wallet;
+}
+
+/**
+ * Initialize custodial wallet
+ */
+export async function initializeWallet(ownerPkh: string): Promise<CustodialWalletStatus> {
+  const response = await apiRequest<{ success: boolean; wallet: CustodialWalletStatus }>('/wallet/initialize', {
+    method: 'POST',
+    body: JSON.stringify({ ownerPkh }),
+  });
+  return response.wallet;
+}
+
+/**
+ * Add an approved agent
+ */
+export async function addAgent(agentPkh: string, agentName: string): Promise<Array<{ pkh: string; name: string; addedAt: string }>> {
+  const response = await apiRequest<{ success: boolean; approvedAgents: Array<{ pkh: string; name: string; addedAt: string }> }>('/wallet/add-agent', {
+    method: 'POST',
+    body: JSON.stringify({ agentPkh, agentName }),
+  });
+  return response.approvedAgents;
+}
+
+/**
+ * Remove an approved agent
+ */
+export async function removeAgent(agentPkh: string): Promise<Array<{ pkh: string; name: string; addedAt: string }>> {
+  const response = await apiRequest<{ success: boolean; approvedAgents: Array<{ pkh: string; name: string; addedAt: string }> }>(`/wallet/remove-agent/${agentPkh}`, {
+    method: 'DELETE',
+  });
+  return response.approvedAgents;
+}
+
+/**
+ * Update cached balance
+ */
+export async function updateWalletBalance(lovelace: string, tokens: Array<{ unit: string; quantity: string }>): Promise<void> {
+  await apiRequest('/wallet/update-balance', {
+    method: 'POST',
+    body: JSON.stringify({ lovelace, tokens }),
+  });
+}
+
 /**
  * Initialize auth - check if we have valid tokens
  */

@@ -47,6 +47,40 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // Custodial wallet information
+  custodialWallet: {
+    // Whether the user has initialized their custodial wallet
+    initialized: {
+      type: Boolean,
+      default: false,
+    },
+    // The script address where user's funds are held
+    scriptAddress: String,
+    // User's payment key hash (derived from wallet)
+    ownerPkh: String,
+    // List of approved agent PKHs
+    approvedAgents: [{
+      pkh: String,
+      name: String,
+      addedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
+    // Track deposits for display (actual balance comes from chain)
+    lastKnownBalance: {
+      lovelace: {
+        type: String,
+        default: '0',
+      },
+      tokens: [{
+        unit: String,
+        quantity: String,
+      }],
+    },
+    // Last time balance was checked
+    lastBalanceCheck: Date,
+  },
 });
 
 // Update timestamp on save

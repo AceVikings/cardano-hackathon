@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import AgentEditorPage from './pages/AgentEditorPage';
 import './App.css';
 
 function App() {
@@ -23,6 +24,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <DashboardPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/editor" 
+                element={
+                  <ProtectedRoute>
+                    <AgentEditorPage />
                   </ProtectedRoute>
                 } 
               />

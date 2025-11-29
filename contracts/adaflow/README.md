@@ -60,17 +60,25 @@ type WalletDatum {
 
 | Redeemer | Required Signer | Description |
 |----------|-----------------|-------------|
-| `Deposit` | - | Add funds to custodial wallet |
+| `Deposit` | Owner | Add funds to custodial wallet |
+| `AgentDeposit` | Approved Agent | Agent deposits funds back to wallet |
 | `AgentSpend` | Approved Agent | Spend from wallet |
-| `UserWithdraw` | Owner | Full withdrawal rights |
+| `UserWithdraw` | Owner | Full withdrawal rights (ADA + tokens) |
 | `AddAgent { agent }` | Owner | Authorize new agent |
 | `RemoveAgent { agent }` | Owner | Revoke agent access |
 
 #### Validation Rules
 
 **Deposit:**
-- Anyone can deposit to the wallet address
+- Owner must sign
 - Inline datum specifies owner and approved agents
+- Value must increase or stay same
+
+**AgentDeposit:**
+- Approved agent must sign
+- Allows agent to return funds to the wallet
+- Datum must remain unchanged
+- Value must increase or stay same
 
 **AgentSpend:**
 - Transaction signer must be in `approved_agents` list
@@ -78,7 +86,7 @@ type WalletDatum {
 
 **UserWithdraw:**
 - Transaction signer must be `owner`
-- Can withdraw entire UTXO
+- Can withdraw entire UTXO (ADA + all tokens)
 
 **AddAgent/RemoveAgent:**
 - Transaction signer must be `owner`
@@ -92,8 +100,8 @@ type WalletDatum {
 
 | Property | Value |
 |----------|-------|
-| Script Hash | `a5c7e74b7e937b2b0e5686c5a364f82bf44672ad55a9c5961a245e98` |
-| Script Address | `addr_test1wzju0e6t06fhk2cw26rvtgmylq4lg3nj4426n3vkrgj9axq07gt6s` |
+| Script Hash | `69d33cf53922feac36233dd63976ad0c281aa37b0f37d92baa5233e1` |
+| Script Address | `addr_test1wp5ax0848y30atpkyv7avwtk45xzsx4r0v8n0kft4ffr8cg3rus49` |
 | Plutus Version | V3 |
 | Network | Preprod |
 
@@ -101,9 +109,10 @@ type WalletDatum {
 
 | Operation | TX Hash |
 |-----------|---------|
-| Deposit (10 ADA) | `33561f4b76d7cde73133670d2403d3dcbbae38363cf530fa961460b78dd5e69c` |
-| Agent Spend (2 ADA) | `2fe4363cd7de9e43ce83f515b1b6c73beb92e18ba5be982ce520293bb3f1d458` |
-| User Withdraw (8 ADA) | `274d8211153ff1516c6c8cc3ffe7e36220183c85b33d21394ecbfbe0878a9f1e` |
+| Deposit (10 ADA) | `ccc901a1dba89aa0804a3f2a13874148bd4ff4c89f335ffe02b8851859f74034` |
+| Agent Spend (2 ADA) | `f64847ab86ea02718e5a4f8e79dca2c6f96e4f1dbc302de2f9f76cf494d4064e` |
+| Agent Deposit (2 ADA) | `f40a9c34076b389c475c0d9097658df3b6c861b4b3426b87a2edaa603e936ff8` |
+| User Withdraw (10 ADA) | `5d44f6014191b63f902ec2c178b238e784910b16aabab1422d5dfb28070c9190` |
 
 ---
 
@@ -140,13 +149,16 @@ cp .env.example .env
 ### Run Interaction Scripts
 
 ```bash
-# Deposit funds to custodial wallet
+# Deposit funds to custodial wallet (user)
 npx tsx interactions/deposit.ts
 
 # Agent spends from wallet
 npx tsx interactions/agent-spend.ts
 
-# User withdraws funds
+# Agent deposits funds back to wallet
+npx tsx interactions/agent-deposit.ts
+
+# User withdraws all funds (ADA + tokens)
 npx tsx interactions/withdraw.ts
 ```
 
@@ -168,8 +180,9 @@ adaflow/
 │   ├── types.ts                # TypeScript types matching Aiken
 │   └── interactions/
 │       ├── deposit.ts          # User deposits to wallet
+│       ├── agent-deposit.ts    # Agent deposits back to wallet
 │       ├── agent-spend.ts      # Agent spends from wallet  
-│       └── withdraw.ts         # User withdraws from wallet
+│       └── withdraw.ts         # User withdraws all funds
 ├── plutus.json                 # Compiled blueprint
 └── aiken.toml                  # Aiken configuration
 ```

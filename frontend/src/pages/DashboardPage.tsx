@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@meshsdk/react';
-import { LogOut, Settings, Bot, TrendingUp, Shield, Zap, RefreshCw } from 'lucide-react';
+import { LogOut, Settings, Bot, TrendingUp, Shield, Zap, RefreshCw, Workflow } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function DashboardPage() {
@@ -151,11 +151,20 @@ export default function DashboardPage() {
           transition={{ delay: 0.6 }}
         >
           <h3 className="text-xl font-bold text-foam-white font-heading mb-2">
-            Full Dashboard Coming Soon
+            Build Your Agent Workflow
           </h3>
-          <p className="text-sea-mist">
-            We're building powerful tools to help you manage your AI agents. Stay tuned!
+          <p className="text-sea-mist mb-6">
+            Use our visual editor to connect multiple AI agents and create powerful automated strategies.
           </p>
+          <motion.button
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-aqua-glow text-deep-ocean font-semibold"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/editor')}
+          >
+            <Workflow className="w-5 h-5" />
+            Open Agent Editor
+          </motion.button>
         </motion.div>
       </div>
     </div>
