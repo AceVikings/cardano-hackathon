@@ -9,10 +9,7 @@ import {
   DollarSign,
   Coins
 } from 'lucide-react';
-import { 
-  getWalletStatus, 
-  type CustodialWalletStatus 
-} from '../services/api';
+import { getWalletStatus } from '../services/api';
 
 // Minswap API for ADA price
 const ADA_PRICE_API = 'https://agg-api.minswap.org/aggregator/ada-price?currency=usd';
