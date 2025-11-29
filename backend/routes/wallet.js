@@ -18,7 +18,7 @@ router.get("/", authenticate, async (req, res) => {
   try {
     // req.user is already populated by authenticate middleware
     const user = req.user;
-    console.log(user);
+    console.error(user);
     // Initialize UTXOs SDK
     const provider = new BlockfrostProvider(
       process.env.BLOCKFROST_API_KEY_PREPROD
