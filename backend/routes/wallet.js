@@ -13,14 +13,8 @@ const SCRIPT_ADDRESS = 'addr_test1wp5ax0848y30atpkyv7avwtk45xzsx4r0v8n0kft4ffr8c
  */
 router.get('/status', authenticate, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found',
-      });
-    }
+    // req.user is already populated by authenticate middleware
+    const user = req.user;
 
     res.json({
       success: true,
@@ -57,14 +51,8 @@ router.post('/initialize', authenticate, async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.user.userId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found',
-      });
-    }
+    // req.user is already populated by authenticate middleware
+    const user = req.user;
 
     // Initialize custodial wallet
     user.custodialWallet = {
@@ -112,14 +100,8 @@ router.post('/add-agent', authenticate, async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.user.userId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found',
-      });
-    }
+    // req.user is already populated by authenticate middleware
+    const user = req.user;
 
     if (!user.custodialWallet?.initialized) {
       return res.status(400).json({
@@ -168,14 +150,8 @@ router.delete('/remove-agent/:pkh', authenticate, async (req, res) => {
   try {
     const { pkh } = req.params;
 
-    const user = await User.findById(req.user.userId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found',
-      });
-    }
+    // req.user is already populated by authenticate middleware
+    const user = req.user;
 
     if (!user.custodialWallet?.initialized) {
       return res.status(400).json({
@@ -219,14 +195,8 @@ router.post('/update-balance', authenticate, async (req, res) => {
   try {
     const { lovelace, tokens } = req.body;
 
-    const user = await User.findById(req.user.userId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found',
-      });
-    }
+    // req.user is already populated by authenticate middleware
+    const user = req.user;
 
     if (!user.custodialWallet?.initialized) {
       return res.status(400).json({

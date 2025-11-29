@@ -1,31 +1,23 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { Bot, Zap, TrendingUp, Shield, Wallet, ArrowLeftRight } from 'lucide-react';
+import { Zap, Send } from 'lucide-react';
 
 export interface AgentNodeData {
   label: string;
-  type: 'swap' | 'yield' | 'guard' | 'wallet' | 'bridge' | 'custom';
+  type: 'swap' | 'transfer';
   status: 'active' | 'inactive' | 'configuring';
   description?: string;
 }
 
-const iconMap = {
+const iconMap: Record<string, typeof Zap> = {
   swap: Zap,
-  yield: TrendingUp,
-  guard: Shield,
-  wallet: Wallet,
-  bridge: ArrowLeftRight,
-  custom: Bot,
+  transfer: Send,
 };
 
-const gradientMap = {
+const gradientMap: Record<string, string> = {
   swap: 'from-current-blue to-aqua-glow',
-  yield: 'from-aqua-glow to-seafoam',
-  guard: 'from-bioluminescent to-emerald-500',
-  wallet: 'from-purple-500 to-current-blue',
-  bridge: 'from-coral to-orange-500',
-  custom: 'from-sea-mist/50 to-current-blue/50',
+  transfer: 'from-aqua-glow to-seafoam',
 };
 
 const statusColors = {
@@ -35,8 +27,8 @@ const statusColors = {
 };
 
 function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
-  const Icon = iconMap[data.type] || Bot;
-  const gradient = gradientMap[data.type] || gradientMap.custom;
+  const Icon = iconMap[data.type] || Zap;
+  const gradient = gradientMap[data.type] || gradientMap.swap;
   const statusColor = statusColors[data.status];
 
   return (

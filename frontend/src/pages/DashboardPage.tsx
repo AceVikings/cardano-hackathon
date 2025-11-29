@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@meshsdk/react';
 import { LogOut, Settings, Bot, TrendingUp, Shield, Zap, RefreshCw, Workflow } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import CustodialWalletCard from '../components/CustodialWalletCard';
+import WalletBalances from '../components/WalletBalances';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -85,28 +87,15 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          {[
-            { label: 'Portfolio Value', value: '$12,450', change: '+5.2%', positive: true },
-            { label: 'Active Agents', value: '3', change: 'Running', positive: true },
-            { label: '24h Profit', value: '$234', change: '+2.1%', positive: true },
-            { label: 'Total Trades', value: '156', change: 'This month', positive: true },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              className="glass-card p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <p className="text-sea-mist/60 text-sm mb-2">{stat.label}</p>
-              <p className="text-3xl font-bold text-foam-white font-heading">{stat.value}</p>
-              <p className={`text-sm mt-2 ${stat.positive ? 'text-bioluminescent' : 'text-coral'}`}>
-                {stat.change}
-              </p>
-            </motion.div>
-          ))}
+        {/* Wallet Balances with USD Value */}
+        <div className="mb-12">
+          <WalletBalances />
+        </div>
+
+        {/* Custodial Wallet Section */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-foam-white font-heading mb-6">Your Custodial Wallet</h2>
+          <CustodialWalletCard />
         </div>
 
         {/* Active Agents */}

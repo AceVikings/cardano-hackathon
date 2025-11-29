@@ -16,16 +16,12 @@ import type { Connection, Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import AgentNode from './AgentNode';
-import WalletNode from './WalletNode';
-import OutputNode from './OutputNode';
 import TriggerNode from './TriggerNode';
 import AgentPalette from './AgentPalette';
 
 // Custom node types
 const nodeTypes = {
   agent: AgentNode,
-  wallet: WalletNode,
-  output: OutputNode,
   trigger: TriggerNode,
 };
 
@@ -86,6 +82,16 @@ function AgentEditorCanvas() {
       if (!type || !dataString) return;
 
       const data = JSON.parse(dataString);
+
+      // Enforce single trigger per workflow
+      if (type === 'trigger') {
+        const existingTrigger = nodes.find((n) => n.type === 'trigger');
+        if (existingTrigger) {
+          alert('A workflow can only have one trigger. Remove the existing trigger first.');
+          return;
+        }
+      }
+
       const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
@@ -100,7 +106,7 @@ function AgentEditorCanvas() {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [screenToFlowPosition, setNodes]
+    [screenToFlowPosition, setNodes, nodes]
   );
 
   const onDragStart = (event: DragEvent, nodeType: string, data: Record<string, unknown>) => {

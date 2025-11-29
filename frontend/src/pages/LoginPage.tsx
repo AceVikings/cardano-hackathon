@@ -119,6 +119,8 @@ export default function LoginPage() {
     clearError();
     try {
       await connect(walletId);
+      // Store the connected wallet for auto-reconnect
+      localStorage.setItem('adaflow_connected_wallet', walletId);
       setAuthStep('sign');
     } catch {
       setErrorMessage('Failed to connect wallet. Please try again.');
