@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   // Firebase UID - primary identifier
@@ -22,8 +22,8 @@ const userSchema = new mongoose.Schema({
   },
   authProvider: {
     type: String,
-    enum: ['password', 'google.com', 'unknown'],
-    default: 'unknown',
+    enum: ["password", "google.com", "unknown"],
+    default: "unknown",
   },
   // User settings
   settings: {
@@ -54,37 +54,65 @@ const userSchema = new mongoose.Schema({
     // User's payment key hash (derived from connected Cardano wallet)
     ownerPkh: String,
     // List of approved agent PKHs
-    approvedAgents: [{
-      pkh: String,
-      name: String,
-      addedAt: {
-        type: Date,
-        default: Date.now,
+    approvedAgents: [
+      {
+        pkh: String,
+        name: String,
+        addedAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
-    }],
+    ],
     // Track deposits for display (actual balance comes from chain)
     lastKnownBalance: {
       lovelace: {
         type: String,
-        default: '0',
+        default: "0",
       },
-      tokens: [{
-        unit: String,
-        quantity: String,
-      }],
+      tokens: [
+        {
+          unit: String,
+          quantity: String,
+        },
+      ],
     },
     // Last time balance was checked
     lastBalanceCheck: Date,
   },
+  // Developer-controlled wallet information
+  developerWallet: {
+    // Whether the developer wallet has been created
+    initialized: {
+      type: Boolean,
+      default: false,
+    },
+    // Wallet ID from UTXOs
+    walletId: String,
+    // Network ID (0 for preprod, 1 for mainnet)
+    networkId: {
+      type: Number,
+      default: 0,
+    },
+    // Payment address
+    paymentAddress: String,
+    // Stake address
+    stakeAddress: String,
+    // Created at
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
 });
 
 // Update timestamp on save
-userSchema.pre('save', function() {
+userSchema.pre("save", function () {
   this.updatedAt = new Date();
 });
 
 // Virtual for formatted user data
-userSchema.virtual('formattedUser').get(function() {
+userSchema.virtual("formattedUser").get(function () {
   return {
     id: this._id,
     firebaseUid: this.firebaseUid,
@@ -99,7 +127,7 @@ userSchema.virtual('formattedUser').get(function() {
 });
 
 // Ensure virtuals are included in JSON
-userSchema.set('toJSON', { virtuals: true });
-userSchema.set('toObject', { virtuals: true });
+userSchema.set("toJSON", { virtuals: true });
+userSchema.set("toObject", { virtuals: true });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);
