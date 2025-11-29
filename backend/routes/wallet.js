@@ -2,10 +2,84 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
+const { Web3Sdk } = require('@meshsdk/web3-sdk');
+const { BlockfrostProvider } = require('@meshsdk/provider');
 
 // Script address is deterministic - same for all users
 // Users are differentiated by their datum (owner PKH)
 const SCRIPT_ADDRESS = 'addr_test1wp5ax0848y30atpkyv7avwtk45xzsx4r0v8n0kft4ffr8cg3rus49';
+
+/**
+ * GET /api/wallet
+ * Get or create user's developer-controlled wallet
+ */
+router.get('/', authenticate, async (req, res) => {
+  try {
+    // req.user is already populated by authenticate middleware
+    const user = req.user;
+
+    // Initialize UTXOs SDK
+    const provider = new BlockfrostProvider(process.env.BLOCKFROST_API_KEY_PREPROD);
+    const sdk = new Web3Sdk({
+      projectId: process.env.UTXOS_PROJECT_ID,
+      apiKey: process.env.UTXOS_API_KEY,
+      privateKey: process.env.UTXOS_PRIVATE_KEY,
+      network: 'preprod',
+      fetcher: provider,
+      submitter: provider,
+    });
+
+    if (user.developerWallet?.initialized) {
+      // Get existing wallet
+      const { info, wallet } = await sdk.wallet.getWallet(user.developerWallet.walletId, user.developerWallet.networkId);
+      
+      return res.json({
+        success: true,
+        wallet: {
+          walletId: user.developerWallet.walletId,
+          paymentAddress: info.address,
+          stakeAddress: info.stakeAddress || null,
+          createdAt: user.developerWallet.createdAt,
+        },
+      });
+    }
+
+    // Create new developer wallet
+    const walletInfo = await sdk.wallet.createWallet();
+    
+    // Get the wallet details
+    const { info, wallet } = await sdk.wallet.getWallet(walletInfo.id, 0); // 0 for preprod
+
+    // Save to user
+    user.developerWallet = {
+      initialized: true,
+      walletId: walletInfo.id,
+      networkId: 0,
+      paymentAddress: info.address,
+      stakeAddress: info.stakeAddress || null,
+      createdAt: new Date(),
+    };
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Developer wallet created',
+      wallet: {
+        walletId: walletInfo.id,
+        paymentAddress: info.address,
+        stakeAddress: info.stakeAddress || null,
+        createdAt: user.developerWallet.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Get wallet error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get or create wallet',
+    });
+  }
+});
 
 /**
  * GET /api/wallet/status

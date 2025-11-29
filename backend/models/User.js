@@ -76,6 +76,30 @@ const userSchema = new mongoose.Schema({
     // Last time balance was checked
     lastBalanceCheck: Date,
   },
+  // Developer-controlled wallet information
+  developerWallet: {
+    // Whether the developer wallet has been created
+    initialized: {
+      type: Boolean,
+      default: false,
+    },
+    // Wallet ID from UTXOs
+    walletId: String,
+    // Network ID (0 for preprod, 1 for mainnet)
+    networkId: {
+      type: Number,
+      default: 0,
+    },
+    // Payment address
+    paymentAddress: String,
+    // Stake address
+    stakeAddress: String,
+    // Created at
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
 });
 
 // Update timestamp on save
