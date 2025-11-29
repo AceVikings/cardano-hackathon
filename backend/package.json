@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node --watch index.js",
-    "start": "node index.js",
+    "dev": "node --experimental-wasm-modules --watch index.js",
+    "start": "node --experimental-wasm-modules index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +14,8 @@
   "dependencies": {
     "@meshsdk/provider": "^1.9.0-beta.87",
     "@meshsdk/web3-sdk": "^0.0.73",
+    "@minswap/sdk": "^0.4.4",
+    "@spacebudz/lucid": "npm:@jsr/spacebudz__lucid@^0.20.13",
     "bcryptjs": "^3.0.3",
     "bip39": "^3.1.0",
     "cookie-parser": "^1.4.7",
