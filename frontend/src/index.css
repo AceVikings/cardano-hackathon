@@ -77,6 +77,11 @@
 }
 
 @layer utilities {
+  /* 3D perspective for card tilt effects */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
   /* Section spacing */
   .section {
     padding-top: 120px;

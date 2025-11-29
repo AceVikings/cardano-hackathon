@@ -15,7 +15,7 @@ import {
 } from '@xyflow/react';
 import type { Connection, Edge, Node, Viewport } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Save, FolderOpen, Loader2, Power, PowerOff, Trash2, Rocket } from 'lucide-react';
+import { Save, FolderOpen, Loader2, Power, Trash2, Rocket } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import AgentNode from './AgentNode';

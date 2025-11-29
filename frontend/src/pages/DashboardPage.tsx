@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   LogOut, Settings, Zap, RefreshCw, Workflow, Clock, CheckCircle,
-  ArrowRight, Plus, Power, PowerOff, Trash2, Edit3 
+  ArrowRight, Plus, Power, PowerOff, Trash2, Edit3, Wallet, Copy, ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -11,19 +11,24 @@ import {
   getWorkflows, 
   updateWorkflowStatus, 
   deleteWorkflow,
-  type WorkflowBasicInfo 
+  getDeveloperWallet,
+  type WorkflowBasicInfo,
+  type DeveloperWallet
 } from '../services/api';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, logout, isLoading: authLoading } = useAuth();
-  const { success, error } = useToast();
+  const { success, error, info } = useToast();
   
   const [workflows, setWorkflows] = useState<WorkflowBasicInfo[]>([]);
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
+  const [wallet, setWallet] = useState<DeveloperWallet | null>(null);
+  const [isLoadingWallet, setIsLoadingWallet] = useState(true);
 
   useEffect(() => {
     fetchWorkflows();
+    fetchWallet();
   }, []);
 
   const fetchWorkflows = async () => {
@@ -36,6 +41,29 @@ export default function DashboardPage() {
     } finally {
       setIsLoadingWorkflows(false);
     }
+  };
+
+  const fetchWallet = async () => {
+    try {
+      const data = await getDeveloperWallet();
+      setWallet(data);
+    } catch (err) {
+      console.error('Failed to fetch wallet:', err);
+      // Don't show error toast - wallet will be created on first access
+    } finally {
+      setIsLoadingWallet(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    info('Copied!', `${label} copied to clipboard`);
+  };
+
+  const truncateAddress = (address: string | undefined | null) => {
+    if (!address) return '';
+    if (address.length <= 20) return address;
+    return `${address.slice(0, 12)}...${address.slice(-8)}`;
   };
 
   const handleToggleStatus = async (workflow: WorkflowBasicInfo) => {
@@ -127,6 +155,59 @@ export default function DashboardPage() {
             </motion.button>
           </div>
         </div>
+
+        {/* Developer Wallet Card */}
+        <motion.div
+          className="glass-card p-6 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-bioluminescent to-aqua-glow flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-foam-white" />
+              </div>
+              <div>
+                <p className="text-sea-mist/60 text-sm">Your Agent Wallet</p>
+                {isLoadingWallet ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <RefreshCw className="w-4 h-4 text-aqua-glow animate-spin" />
+                    <span className="text-sm text-sea-mist">Loading wallet...</span>
+                  </div>
+                ) : wallet ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-foam-white font-mono text-sm">
+                      {truncateAddress(wallet.paymentAddress)}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(wallet.paymentAddress, 'Address')}
+                      className="p-1 hover:bg-sea-mist/10 rounded transition-colors"
+                    >
+                      <Copy className="w-4 h-4 text-sea-mist/60 hover:text-aqua-glow" />
+                    </button>
+                    <a
+                      href={`https://preprod.cardanoscan.io/address/${wallet.paymentAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 hover:bg-sea-mist/10 rounded transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4 text-sea-mist/60 hover:text-aqua-glow" />
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-sm text-sea-mist/50">No wallet initialized</p>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sea-mist/60 text-xs">Network</p>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400">
+                Preprod
+              </span>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
