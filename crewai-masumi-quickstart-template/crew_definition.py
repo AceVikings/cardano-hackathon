@@ -1,6 +1,6 @@
 from crewai import Agent, Crew, Task
 from logging_config import get_logger
-from tools import get_swap_quote, get_pool_address, calculate_min_output
+from tools import GetSwapQuoteTool, GetPoolAddressTool, CalculateMinOutputTool
 
 class ResearchCrew:
     def __init__(self, verbose=True, logger=None):
@@ -28,29 +28,31 @@ class ResearchCrew:
 
         converter = Agent(
             role='Token Converter',
-            goal='Generate the transaction for swapping tokens on the Cardano chain using a specific DEX',
+            goal='Generate the transaction for swapping tokens on the Cardano chain using a specific DEX. Identify the Base token, target token and amounts from the text input',
             backstory='Expert in Cardano blockchain transactions, DEX integrations, and swap operations',
             verbose=self.verbose,
-            tools=[get_swap_quote, get_pool_address, calculate_min_output]
+            tools=[GetSwapQuoteTool(), GetPoolAddressTool(), CalculateMinOutputTool()]
         )
 
         self.logger.info("Created research, writer, and converter agents")
 
         crew = Crew(
-            agents=[researcher, writer, converter],
+            agents=[
+                # researcher, writer,
+                converter],
             tasks=[
+                # Task(
+                #     description='Research: {text}',
+                #     expected_output='Detailed research findings about the topic',
+                #     agent=researcher
+                # ),
+                # Task(
+                #     description='Write summary',
+                #     expected_output='Clear and concise summary of the research findings',
+                #     agent=writer
+                # ),
                 Task(
-                    description='Research: {text}',
-                    expected_output='Detailed research findings about the topic',
-                    agent=researcher
-                ),
-                Task(
-                    description='Write summary',
-                    expected_output='Clear and concise summary of the research findings',
-                    agent=writer
-                ),
-                Task(
-                    description='Convert {base_token} to {target_token} using {dex} DEX on Cardano',
+                    description='Convert the tokens using DEX on Cardano. Here\'s the input: {text}',
                     expected_output='The unsigned transaction details (e.g., CBOR hex, inputs, outputs, fees) that the user can sign and submit to execute the swap. Assume the user has the necessary wallet setup.',
                     agent=converter
                 )
