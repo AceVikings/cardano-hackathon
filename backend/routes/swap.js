@@ -6,7 +6,7 @@ const { BlockfrostProvider } = require("@meshsdk/provider");
 
 /**
  * Minswap Swap Route
- * 
+ *
  * Generates unsigned transactions for token swaps on Minswap DEX.
  * Uses @minswap/sdk for pool discovery and transaction building.
  */
@@ -64,7 +64,7 @@ const TOKENS = {
  * @auth Required - Bearer token
  * @body {
  *   assetIn: "lovelace" | "policyId.tokenName",
- *   assetOut: "lovelace" | "policyId.tokenName", 
+ *   assetOut: "lovelace" | "policyId.tokenName",
  *   amountIn: string (in lovelace or smallest unit),
  *   slippagePercent?: number (default 1%)
  * }
@@ -116,15 +116,15 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
 
     // Load Minswap SDK
     const { minswapSDK, blockfrostAPI, lucidLib } = await loadModules();
-    const { 
-      ADA, 
-      BlockfrostAdapter, 
-      NetworkId, 
-      DexV2, 
+    const {
+      ADA,
+      BlockfrostAdapter,
+      NetworkId,
+      DexV2,
       DexV2Calculation,
       OrderV2,
       calculateAmountWithSlippageTolerance,
-      Asset 
+      Asset,
     } = minswapSDK;
     const { BlockFrostAPI } = blockfrostAPI;
     const { Lucid, Blockfrost } = lucidLib;
@@ -134,11 +134,8 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
       projectId: blockfrostApiKey,
       network: config.blockfrostNetwork,
     });
-    
-    const adapter = new BlockfrostAdapter(
-      NetworkId.TESTNET,
-      blockfrostApi
-    );
+
+    const adapter = new BlockfrostAdapter(NetworkId.TESTNET, blockfrostApi);
 
     // Parse assets
     const parsedAssetIn = parseAssetString(assetIn, ADA);
@@ -146,7 +143,7 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
 
     // Find pool
     const pool = await adapter.getV2PoolByPair(parsedAssetIn, parsedAssetOut);
-    
+
     if (!pool) {
       return res.status(404).json({
         success: false,
@@ -158,7 +155,8 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
     const amountInBigInt = BigInt(amountIn);
 
     // Determine swap direction
-    const isAtoB = Asset.equals(parsedAssetIn, pool.assetA) || 
+    const isAtoB =
+      Asset.equals(parsedAssetIn, pool.assetA) ||
       (parsedAssetIn.policyId === "" && pool.assetA.policyId === "");
 
     const amountOut = DexV2Calculation.calculateAmountOut({
@@ -188,7 +186,7 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
       `${config.blockfrostUrl}/addresses/${walletAddress}/utxos`,
       { headers: { project_id: blockfrostApiKey } }
     );
-    
+    console.log("UTXOs response status:", utxosResponse);
     if (!utxosResponse.ok) {
       return res.status(500).json({
         success: false,
@@ -197,7 +195,7 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
     }
 
     const blockfrostUtxos = await utxosResponse.json();
-    
+
     // Check balance
     let totalLovelace = 0n;
     for (const utxo of blockfrostUtxos) {
@@ -213,12 +211,14 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
     if (assetIn === "lovelace" && totalLovelace < requiredLovelace) {
       return res.status(400).json({
         success: false,
-        error: `Insufficient balance. Need ${Number(requiredLovelace) / 1_000_000} ADA, have ${Number(totalLovelace) / 1_000_000} ADA`,
+        error: `Insufficient balance. Need ${
+          Number(requiredLovelace) / 1_000_000
+        } ADA, have ${Number(totalLovelace) / 1_000_000} ADA`,
       });
     }
 
     // Convert Blockfrost UTXOs to Lucid format
-    const lucidUtxos = blockfrostUtxos.map(utxo => ({
+    const lucidUtxos = blockfrostUtxos.map((utxo) => ({
       txHash: utxo.tx_hash,
       outputIndex: utxo.output_index,
       assets: utxo.amount.reduce((acc, a) => {
@@ -235,7 +235,7 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
     const lucid = new Lucid({
       provider: new Blockfrost(config.blockfrostUrl, blockfrostApiKey),
     });
-    
+
     // Set up read-only wallet with the user's address and UTXOs
     lucid.selectReadOnlyWallet({
       address: walletAddress,
@@ -253,7 +253,9 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
           type: OrderV2.StepType.SWAP_EXACT_IN,
           amountIn: amountInBigInt,
           assetIn: parsedAssetIn,
-          direction: isAtoB ? OrderV2.Direction.A_TO_B : OrderV2.Direction.B_TO_A,
+          direction: isAtoB
+            ? OrderV2.Direction.A_TO_B
+            : OrderV2.Direction.B_TO_A,
           minimumAmountOut: minimumAmountOut,
           lpAsset: pool.lpAsset,
           isLimitOrder: false,
@@ -281,7 +283,6 @@ router.post("/minswap/swap", authenticate, async (req, res) => {
         deposit: "2000000",
       },
     });
-
   } catch (error) {
     console.error("Minswap swap error:", error);
     res.status(500).json({
@@ -336,7 +337,12 @@ router.post("/minswap/build-tx", async (req, res) => {
       });
     }
 
-    if (!swapParams || !swapParams.assetIn || !swapParams.assetOut || !swapParams.amountIn) {
+    if (
+      !swapParams ||
+      !swapParams.assetIn ||
+      !swapParams.assetOut ||
+      !swapParams.amountIn
+    ) {
       return res.status(400).json({
         success: false,
         error: "swapParams must include assetIn, assetOut, and amountIn",
@@ -352,7 +358,8 @@ router.post("/minswap/build-tx", async (req, res) => {
     }
 
     // Check for Blockfrost API key
-    const blockfrostApiKey = process.env.BLOCKFROST_API_KEY_PREPROD || process.env.BLOCKFROST_API_KEY;
+    const blockfrostApiKey =
+      process.env.BLOCKFROST_API_KEY_PREPROD || process.env.BLOCKFROST_API_KEY;
     if (!blockfrostApiKey) {
       return res.status(500).json({
         success: false,
@@ -362,15 +369,15 @@ router.post("/minswap/build-tx", async (req, res) => {
 
     // Load ESM modules
     const { minswapSDK, blockfrostAPI, lucidLib } = await loadModules();
-    const { 
-      ADA, 
-      BlockfrostAdapter, 
-      NetworkId, 
-      DexV2, 
+    const {
+      ADA,
+      BlockfrostAdapter,
+      NetworkId,
+      DexV2,
       DexV2Calculation,
       OrderV2,
       calculateAmountWithSlippageTolerance,
-      Asset 
+      Asset,
     } = minswapSDK;
     const { BlockFrostAPI } = blockfrostAPI;
     const { Lucid, Blockfrost } = lucidLib;
@@ -379,7 +386,7 @@ router.post("/minswap/build-tx", async (req, res) => {
     const lucid = new Lucid({
       provider: new Blockfrost(config.blockfrostUrl, blockfrostApiKey),
     });
-    
+
     // Select wallet from the user's address
     // The UTXOs will be provided directly to the SDK
     lucid.selectWalletFrom({
@@ -392,7 +399,7 @@ router.post("/minswap/build-tx", async (req, res) => {
       projectId: blockfrostApiKey,
       network: config.blockfrostNetwork,
     });
-    
+
     const adapter = new BlockfrostAdapter(
       network === "mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET,
       blockfrostApi
@@ -404,12 +411,13 @@ router.post("/minswap/build-tx", async (req, res) => {
 
     // Find pool
     const pool = await adapter.getV2PoolByPair(assetIn, assetOut);
-    
+
     if (!pool) {
       return res.status(404).json({
         success: false,
         error: "No liquidity pool found for the specified token pair",
-        suggestion: "Verify the token policy IDs and ensure a pool exists on Minswap",
+        suggestion:
+          "Verify the token policy IDs and ensure a pool exists on Minswap",
       });
     }
 
@@ -418,7 +426,8 @@ router.post("/minswap/build-tx", async (req, res) => {
     const slippagePercent = swapParams.slippagePercent || 1; // Default 1%
 
     // Determine swap direction
-    const isAtoB = Asset.equals(assetIn, pool.assetA) || 
+    const isAtoB =
+      Asset.equals(assetIn, pool.assetA) ||
       (assetIn.policyId === "" && pool.assetA.policyId === "");
 
     const amountOut = DexV2Calculation.calculateAmountOut({
@@ -446,7 +455,7 @@ router.post("/minswap/build-tx", async (req, res) => {
     // Build the swap transaction
     // First, set up Lucid with the user's address for building
     // We don't need the wallet, just need to build the tx
-    
+
     const dexV2 = new DexV2(lucid, adapter);
 
     // Convert frontend UTxOs to Lucid format
@@ -460,7 +469,9 @@ router.post("/minswap/build-tx", async (req, res) => {
           type: OrderV2.StepType.SWAP_EXACT_IN,
           amountIn: amountIn,
           assetIn: assetIn,
-          direction: isAtoB ? OrderV2.Direction.A_TO_B : OrderV2.Direction.B_TO_A,
+          direction: isAtoB
+            ? OrderV2.Direction.A_TO_B
+            : OrderV2.Direction.B_TO_A,
           minimumAmountOut: minimumAmountOut,
           lpAsset: pool.lpAsset,
           isLimitOrder: false,
@@ -480,8 +491,10 @@ router.post("/minswap/build-tx", async (req, res) => {
       unsignedTx: unsignedTx,
       txDetails: {
         poolId: pool.id || Asset.toString(pool.lpAsset),
-        assetIn: swapParams.assetIn === "ADA" ? "lovelace" : Asset.toString(assetIn),
-        assetOut: swapParams.assetOut === "ADA" ? "lovelace" : Asset.toString(assetOut),
+        assetIn:
+          swapParams.assetIn === "ADA" ? "lovelace" : Asset.toString(assetIn),
+        assetOut:
+          swapParams.assetOut === "ADA" ? "lovelace" : Asset.toString(assetOut),
         amountIn: amountIn.toString(),
         expectedOutput: amountOut.toString(),
         minimumOutput: minimumAmountOut.toString(),
@@ -492,7 +505,6 @@ router.post("/minswap/build-tx", async (req, res) => {
         deposit: "2000000", // 2 ADA (returned after order is processed)
       },
     });
-
   } catch (error) {
     console.error("Minswap swap build error:", error);
     res.status(500).json({
@@ -512,7 +524,7 @@ router.post("/minswap/build-tx", async (req, res) => {
 router.get("/minswap/pools", async (req, res) => {
   try {
     const { network = "preprod", page = 1 } = req.query;
-    
+
     const config = MINSWAP_CONFIG[network];
     if (!config) {
       return res.status(400).json({
@@ -521,7 +533,8 @@ router.get("/minswap/pools", async (req, res) => {
       });
     }
 
-    const blockfrostApiKey = process.env.BLOCKFROST_API_KEY_PREPROD || process.env.BLOCKFROST_API_KEY;
+    const blockfrostApiKey =
+      process.env.BLOCKFROST_API_KEY_PREPROD || process.env.BLOCKFROST_API_KEY;
     if (!blockfrostApiKey) {
       return res.status(500).json({
         success: false,
@@ -545,7 +558,7 @@ router.get("/minswap/pools", async (req, res) => {
 
     const pools = await adapter.getV2Pools({ page: parseInt(page) });
 
-    const formattedPools = pools.map(pool => ({
+    const formattedPools = pools.map((pool) => ({
       lpAsset: Asset.toString(pool.lpAsset),
       assetA: pool.assetA.policyId === "" ? "ADA" : Asset.toString(pool.assetA),
       assetB: pool.assetB.policyId === "" ? "ADA" : Asset.toString(pool.assetB),
@@ -561,7 +574,6 @@ router.get("/minswap/pools", async (req, res) => {
       page: parseInt(page),
       pools: formattedPools,
     });
-
   } catch (error) {
     console.error("Minswap pools query error:", error);
     res.status(500).json({
@@ -576,18 +588,18 @@ router.get("/minswap/pools", async (req, res) => {
  * @desc Get a swap quote without building transaction
  * @query network: "preprod" | "mainnet"
  * @query assetIn: "ADA" or policy.tokenName
- * @query assetOut: "ADA" or policy.tokenName  
+ * @query assetOut: "ADA" or policy.tokenName
  * @query amountIn: amount in smallest unit
  * @query slippage: slippage percent (default 1)
  */
 router.get("/minswap/quote", async (req, res) => {
   try {
-    const { 
-      network = "preprod", 
-      assetIn, 
-      assetOut, 
-      amountIn, 
-      slippage = "1" 
+    const {
+      network = "preprod",
+      assetIn,
+      assetOut,
+      amountIn,
+      slippage = "1",
     } = req.query;
 
     if (!assetIn || !assetOut || !amountIn) {
@@ -605,7 +617,8 @@ router.get("/minswap/quote", async (req, res) => {
       });
     }
 
-    const blockfrostApiKey = process.env.BLOCKFROST_API_KEY_PREPROD || process.env.BLOCKFROST_API_KEY;
+    const blockfrostApiKey =
+      process.env.BLOCKFROST_API_KEY_PREPROD || process.env.BLOCKFROST_API_KEY;
     if (!blockfrostApiKey) {
       return res.status(500).json({
         success: false,
@@ -614,13 +627,13 @@ router.get("/minswap/quote", async (req, res) => {
     }
 
     const { minswapSDK, blockfrostAPI } = await loadModules();
-    const { 
-      ADA, 
-      BlockfrostAdapter, 
-      NetworkId, 
+    const {
+      ADA,
+      BlockfrostAdapter,
+      NetworkId,
       DexV2Calculation,
       calculateAmountWithSlippageTolerance,
-      Asset 
+      Asset,
     } = minswapSDK;
     const { BlockFrostAPI } = blockfrostAPI;
 
@@ -640,7 +653,7 @@ router.get("/minswap/quote", async (req, res) => {
 
     // Find pool
     const pool = await adapter.getV2PoolByPair(parsedAssetIn, parsedAssetOut);
-    
+
     if (!pool) {
       return res.status(404).json({
         success: false,
@@ -652,7 +665,8 @@ router.get("/minswap/quote", async (req, res) => {
     const slippagePercent = parseFloat(slippage);
 
     // Determine direction
-    const isAtoB = Asset.equals(parsedAssetIn, pool.assetA) || 
+    const isAtoB =
+      Asset.equals(parsedAssetIn, pool.assetA) ||
       (parsedAssetIn.policyId === "" && pool.assetA.policyId === "");
 
     const amountOut = DexV2Calculation.calculateAmountOut({
@@ -691,7 +705,8 @@ router.get("/minswap/quote", async (req, res) => {
         price: price.toString(),
         poolReserveIn: (isAtoB ? pool.reserveA : pool.reserveB).toString(),
         poolReserveOut: (isAtoB ? pool.reserveB : pool.reserveA).toString(),
-        tradingFee: (Number(isAtoB ? pool.feeA[0] : pool.feeB[0]) / 100).toString() + "%",
+        tradingFee:
+          (Number(isAtoB ? pool.feeA[0] : pool.feeB[0]) / 100).toString() + "%",
       },
       fees: {
         batcherFee: "2000000", // 2 ADA
@@ -699,7 +714,6 @@ router.get("/minswap/quote", async (req, res) => {
         estimatedNetworkFee: "200000", // ~0.2 ADA
       },
     });
-
   } catch (error) {
     console.error("Minswap quote error:", error);
     res.status(500).json({
@@ -716,7 +730,7 @@ router.get("/minswap/quote", async (req, res) => {
  */
 router.get("/minswap/tokens", (req, res) => {
   const { network = "preprod" } = req.query;
-  
+
   const tokens = TOKENS[network];
   if (!tokens) {
     return res.status(400).json({
@@ -732,7 +746,10 @@ router.get("/minswap/tokens", (req, res) => {
       symbol,
       policyId: asset.policyId,
       tokenName: asset.tokenName,
-      assetId: asset.policyId === "" ? "lovelace" : `${asset.policyId}${asset.tokenName}`,
+      assetId:
+        asset.policyId === ""
+          ? "lovelace"
+          : `${asset.policyId}${asset.tokenName}`,
     })),
   });
 });
@@ -743,13 +760,13 @@ function parseAssetString(assetStr, ADA) {
   if (assetStr === "ADA" || assetStr === "lovelace") {
     return ADA;
   }
-  
+
   // Expect format: policyId.tokenName or policyIdtokenName
   if (assetStr.includes(".")) {
     const [policyId, tokenName] = assetStr.split(".");
     return { policyId, tokenName };
   }
-  
+
   // Assume first 56 chars are policy ID
   if (assetStr.length >= 56) {
     return {
@@ -758,7 +775,9 @@ function parseAssetString(assetStr, ADA) {
     };
   }
 
-  throw new Error(`Invalid asset format: ${assetStr}. Use 'ADA' or 'policyId.tokenName'`);
+  throw new Error(
+    `Invalid asset format: ${assetStr}. Use 'ADA' or 'policyId.tokenName'`
+  );
 }
 
 function calculatePriceImpact(amountIn, amountOut, reserveIn, reserveOut) {
@@ -771,7 +790,7 @@ function calculatePriceImpact(amountIn, amountOut, reserveIn, reserveOut) {
 
 function convertUtxosToLucidFormat(utxos) {
   // Convert frontend UTxO format to Lucid format
-  return utxos.map(utxo => ({
+  return utxos.map((utxo) => ({
     txHash: utxo.txHash || utxo.tx_hash,
     outputIndex: utxo.outputIndex ?? utxo.tx_index ?? utxo.output_index,
     assets: utxo.assets || convertAmountToAssets(utxo.amount),
@@ -784,7 +803,7 @@ function convertUtxosToLucidFormat(utxos) {
 
 function convertAmountToAssets(amount) {
   if (!amount || !Array.isArray(amount)) return { lovelace: 0n };
-  
+
   const assets = {};
   for (const a of amount) {
     if (a.unit === "lovelace") {
