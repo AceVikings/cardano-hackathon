@@ -1,11 +1,68 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Settings, Zap, RefreshCw, Workflow, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { 
+  LogOut, Settings, Zap, RefreshCw, Workflow, Clock, CheckCircle,
+  ArrowRight, Plus, Power, PowerOff, Trash2, Edit3 
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { 
+  getWorkflows, 
+  updateWorkflowStatus, 
+  deleteWorkflow,
+  type WorkflowBasicInfo 
+} from '../services/api';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
+  const { success, error } = useToast();
+  
+  const [workflows, setWorkflows] = useState<WorkflowBasicInfo[]>([]);
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
+
+  useEffect(() => {
+    fetchWorkflows();
+  }, []);
+
+  const fetchWorkflows = async () => {
+    try {
+      const data = await getWorkflows();
+      setWorkflows(data);
+    } catch (err) {
+      console.error('Failed to fetch workflows:', err);
+      error('Failed to load workflows', 'Please try again later');
+    } finally {
+      setIsLoadingWorkflows(false);
+    }
+  };
+
+  const handleToggleStatus = async (workflow: WorkflowBasicInfo) => {
+    try {
+      const newStatus = workflow.status === 'active' ? 'inactive' : 'active';
+      const updated = await updateWorkflowStatus(workflow.id, newStatus);
+      setWorkflows(prev => prev.map(w => w.id === workflow.id ? { ...w, status: updated.status } : w));
+      success(
+        newStatus === 'active' ? 'Workflow activated' : 'Workflow deactivated',
+        workflow.name
+      );
+    } catch (err) {
+      error('Failed to update status', 'Please try again');
+    }
+  };
+
+  const handleDelete = async (workflow: WorkflowBasicInfo) => {
+    if (!confirm(`Are you sure you want to delete "${workflow.name}"?`)) return;
+    
+    try {
+      await deleteWorkflow(workflow.id);
+      setWorkflows(prev => prev.filter(w => w.id !== workflow.id));
+      success('Workflow deleted', workflow.name);
+    } catch (err) {
+      error('Failed to delete workflow', 'Please try again');
+    }
+  };
 
   const getUserDisplayName = () => {
     if (user?.displayName) return user.displayName;
@@ -18,8 +75,14 @@ export default function DashboardPage() {
     navigate('/');
   };
 
+  // Calculate stats
+  const activeWorkflows = workflows.filter(w => w.status === 'active').length;
+  const totalExecutions = workflows.reduce((sum, w) => sum + (w.stats?.totalExecutions || 0), 0);
+  const successfulExecutions = workflows.reduce((sum, w) => sum + (w.stats?.successfulExecutions || 0), 0);
+  const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
+
   // Loading state
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -78,8 +141,8 @@ export default function DashboardPage() {
                 <Workflow className="w-6 h-6 text-foam-white" />
               </div>
               <div>
-                <p className="text-sea-mist/60 text-sm">Active Agents</p>
-                <p className="text-2xl font-bold text-foam-white">0</p>
+                <p className="text-sea-mist/60 text-sm">Active Workflows</p>
+                <p className="text-2xl font-bold text-foam-white">{activeWorkflows}</p>
               </div>
             </div>
           </motion.div>
@@ -96,7 +159,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sea-mist/60 text-sm">Total Executions</p>
-                <p className="text-2xl font-bold text-foam-white">0</p>
+                <p className="text-2xl font-bold text-foam-white">{totalExecutions}</p>
               </div>
             </div>
           </motion.div>
@@ -113,10 +176,125 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sea-mist/60 text-sm">Success Rate</p>
-                <p className="text-2xl font-bold text-foam-white">--</p>
+                <p className="text-2xl font-bold text-foam-white">{successRate > 0 ? `${successRate}%` : '--'}</p>
               </div>
             </div>
           </motion.div>
+        </div>
+
+        {/* My Workflows */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-foam-white font-heading">My Workflows</h2>
+            <motion.button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-aqua-glow text-deep-ocean font-medium text-sm"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/editor')}
+            >
+              <Plus className="w-4 h-4" />
+              New Workflow
+            </motion.button>
+          </div>
+
+          {isLoadingWorkflows ? (
+            <div className="glass-card p-12 text-center">
+              <RefreshCw className="w-8 h-8 text-aqua-glow animate-spin mx-auto mb-4" />
+              <p className="text-sea-mist">Loading workflows...</p>
+            </div>
+          ) : workflows.length === 0 ? (
+            <div className="glass-card p-12 text-center">
+              <Workflow className="w-12 h-12 text-sea-mist/30 mx-auto mb-4" />
+              <p className="text-sea-mist/60 mb-2">No workflows yet</p>
+              <p className="text-sm text-sea-mist/40 mb-6">Create your first workflow to get started</p>
+              <motion.button
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-aqua-glow text-deep-ocean font-semibold"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/editor')}
+              >
+                <Plus className="w-5 h-5" />
+                Create Workflow
+              </motion.button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {workflows.map((workflow, index) => (
+                <motion.div
+                  key={workflow.id}
+                  className="glass-card p-5 hover:ring-1 hover:ring-aqua-glow/30 transition-all cursor-pointer"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => navigate(`/editor/${workflow.id}`)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        workflow.status === 'active' 
+                          ? 'bg-gradient-to-br from-bioluminescent to-emerald-500' 
+                          : 'bg-gradient-to-br from-current-blue to-aqua-glow'
+                      }`}>
+                        <Workflow className="w-5 h-5 text-foam-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foam-white">{workflow.name}</h3>
+                        <span className={`inline-flex items-center gap-1 text-xs ${
+                          workflow.status === 'active' ? 'text-bioluminescent' : 'text-sea-mist/50'
+                        }`}>
+                          {workflow.status === 'active' ? (
+                            <><Power className="w-3 h-3" /> Active</>
+                          ) : (
+                            <><PowerOff className="w-3 h-3" /> Inactive</>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {workflow.description && (
+                    <p className="text-sm text-sea-mist/50 line-clamp-2 mb-3">{workflow.description}</p>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-xs text-sea-mist/40">
+                    <span>{workflow.nodeCount} nodes · {workflow.edgeCount} connections</span>
+                    <span>{new Date(workflow.updatedAt).toLocaleDateString()}</span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-sea-mist/10">
+                    <motion.button
+                      onClick={(e) => { e.stopPropagation(); handleToggleStatus(workflow); }}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                        workflow.status === 'active'
+                          ? 'bg-bioluminescent/20 text-bioluminescent hover:bg-bioluminescent/30'
+                          : 'bg-sea-mist/10 text-sea-mist hover:bg-sea-mist/20'
+                      }`}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {workflow.status === 'active' ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                      {workflow.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </motion.button>
+                    <motion.button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/editor/${workflow.id}`); }}
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-current-blue/20 text-aqua-glow hover:bg-current-blue/30 text-xs font-medium transition-colors"
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit
+                    </motion.button>
+                    <motion.button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(workflow); }}
+                      className="flex items-center justify-center py-2 px-3 rounded-lg bg-coral/10 text-coral hover:bg-coral/20 text-xs transition-colors"
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Executions */}
@@ -143,88 +321,17 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-sea-mist/5">
-                  {/* Placeholder executions - will be replaced with real data */}
-                  {[
-                    { agent: 'Swap Agent', action: 'ADA → MIN', amount: '50 ADA', status: 'success', time: '2 min ago' },
-                    { agent: 'Transfer Agent', action: 'Send to addr1...x4f2', amount: '25 ADA', status: 'success', time: '15 min ago' },
-                    { agent: 'Swap Agent', action: 'ADA → SNEK', amount: '100 ADA', status: 'pending', time: '32 min ago' },
-                    { agent: 'Swap Agent', action: 'MIN → ADA', amount: '1,250 MIN', status: 'failed', time: '1 hour ago' },
-                  ].map((execution, index) => (
-                    <motion.tr 
-                      key={index}
-                      className="hover:bg-sea-mist/5 transition-colors"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            execution.agent === 'Swap Agent' 
-                              ? 'bg-gradient-to-br from-current-blue to-aqua-glow' 
-                              : 'bg-gradient-to-br from-aqua-glow to-seafoam'
-                          }`}>
-                            <Zap className="w-4 h-4 text-foam-white" />
-                          </div>
-                          <span className="font-medium text-foam-white">{execution.agent}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-sea-mist">{execution.action}</td>
-                      <td className="py-4 px-6 text-foam-white font-mono">{execution.amount}</td>
-                      <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          execution.status === 'success' 
-                            ? 'bg-bioluminescent/20 text-bioluminescent' 
-                            : execution.status === 'pending'
-                            ? 'bg-amber-500/20 text-amber-400'
-                            : 'bg-coral/20 text-coral'
-                        }`}>
-                          {execution.status === 'success' && <CheckCircle className="w-3 h-3" />}
-                          {execution.status === 'pending' && <Clock className="w-3 h-3" />}
-                          {execution.status === 'failed' && <XCircle className="w-3 h-3" />}
-                          {execution.status.charAt(0).toUpperCase() + execution.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-sea-mist/60 text-sm">{execution.time}</td>
-                    </motion.tr>
-                  ))}
+                  {/* Empty state - shown when no executions */}
                 </tbody>
               </table>
             </div>
-            {/* Empty state - shown when no executions */}
-            {false && (
-              <div className="py-12 text-center">
-                <Clock className="w-12 h-12 text-sea-mist/30 mx-auto mb-4" />
-                <p className="text-sea-mist/60 mb-2">No recent executions</p>
-                <p className="text-sm text-sea-mist/40">Your agent executions will appear here</p>
-              </div>
-            )}
+            <div className="py-12 text-center">
+              <Clock className="w-12 h-12 text-sea-mist/30 mx-auto mb-4" />
+              <p className="text-sea-mist/60 mb-2">No recent executions</p>
+              <p className="text-sm text-sea-mist/40">Your workflow executions will appear here</p>
+            </div>
           </div>
         </div>
-
-        {/* Coming Soon Notice */}
-        <motion.div
-          className="glass-card p-8 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <h3 className="text-xl font-bold text-foam-white font-heading mb-2">
-            Build Your Agent Workflow
-          </h3>
-          <p className="text-sea-mist mb-6">
-            Use our visual editor to connect multiple AI agents and create powerful automated strategies.
-          </p>
-          <motion.button
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-aqua-glow text-deep-ocean font-semibold"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/editor')}
-          >
-            <Workflow className="w-5 h-5" />
-            Open Agent Editor
-          </motion.button>
-        </motion.div>
       </div>
     </div>
   );

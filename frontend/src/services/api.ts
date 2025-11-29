@@ -56,6 +56,25 @@ async function apiRequest<T>(
 }
 
 // ============================================================================
+// Developer Wallet API
+// ============================================================================
+
+export interface DeveloperWallet {
+  walletId: string;
+  paymentAddress: string;
+  stakeAddress: string | null;
+  createdAt: string;
+}
+
+/**
+ * Get or create user's developer-controlled wallet
+ */
+export async function getDeveloperWallet(): Promise<DeveloperWallet> {
+  const response = await apiRequest<{ success: boolean; wallet: DeveloperWallet; message?: string }>('/wallet');
+  return response.wallet;
+}
+
+// ============================================================================
 // Custodial Wallet API
 // ============================================================================
 
