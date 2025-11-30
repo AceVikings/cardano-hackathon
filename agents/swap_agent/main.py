@@ -73,7 +73,7 @@ class ProvideInputRequest(BaseModel):
 async def execute_crew_task(input_data: str) -> str:
     """ Execute a CrewAI task with Research and Writing Agents """
     logger.info(f"Starting CrewAI task with input: {input_data}")
-    crew = ResearchCrew(logger=logger)
+    crew = ResearchCrew(logger=logger, verbose=True)
     inputs = {"text": input_data}
     result = crew.crew.kickoff(inputs)
     logger.info("CrewAI task completed successfully")
@@ -313,10 +313,10 @@ def main():
     print("🚀 Running CrewAI agents locally (standalone mode)...")
     print("=" * 70 + "\n")
     
-    # Define test input - intent and bearer_token are separate
-    input_data =  {'intent': 'Swap 10 ADA to MIN', 'bearer_token': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjNzQ5NTFmNjBhMDE0NzE3ZjFlMzA4ZDZiMjgwZjQ4ZjFlODhmZGEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQW5zaHVtYW4gU2luZ2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS056S05yTVlQNTlEYklwVmJEeGppQ2pkcVRqd3dTWEFhUjJXc09iamFZdFZLTHVTYz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jYXJkYW5vLWhhY2thdGhvbi0zZWYxYSIsImF1ZCI6ImNhcmRhbm8taGFja2F0aG9uLTNlZjFhIiwiYXV0aF90aW1lIjoxNzY0NDUxNTk5LCJ1c2VyX2lkIjoiWENFSHB5UWZaNGd5M0x0dFB0QkhDaVZkRDVmMiIsInN1YiI6IlhDRUhweVFmWjRneTNMdHRQdEJIQ2lWZEQ1ZjIiLCJpYXQiOjE3NjQ0NjE4ODIsImV4cCI6MTc2NDQ2NTQ4MiwiZW1haWwiOiJhbnNodW1hbnNpbmdoNjRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDY1NzM2Mzc3MjQxMDI5MDgzNzciXSwiZW1haWwiOlsiYW5zaHVtYW5zaW5naDY0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.A_1eJmuLkUF3hlPiaH2DiaU-fDxrOi53P8HMJKFBKR9paHAPiUpcE3oYFmihcCcF3V_77GF8aR-KHXSpfu-RN7iunJNA6tDfYtvPjLvsoIjE65TSFZU1TzN5qHvmH7vT9vjmxZWh0iQKpI6c3hYlGUhDXbvTs_rVUUuZNnovUVciNQJW8Sb8XJISQJzYRLNlVsKWlrAVTtr7b7Fy9n2wY6s2T5kbUNwJ1Wj9bJ7GlBzfCIKpsSmOJjjdKvXhOZUdZ8-PTGCUHgDShGtPH8vBgfrUrhsl9Rl9IC-ZvIVbHbN6yinfQ35eM2zF3iEEbW_-ldugNcTtR1VgnPKlcKqN0Q'}
+    # Define test input - text and bearer_token are separate
+    input_data =  {'text': 'Swaap 0.001 ADA to MIN', 'bearer_token': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjNzQ5NTFmNjBhMDE0NzE3ZjFlMzA4ZDZiMjgwZjQ4ZjFlODhmZGEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQW5zaHVtYW4gU2luZ2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS056S05yTVlQNTlEYklwVmJEeGppQ2pkcVRqd3dTWEFhUjJXc09iamFZdFZLTHVTYz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jYXJkYW5vLWhhY2thdGhvbi0zZWYxYSIsImF1ZCI6ImNhcmRhbm8taGFja2F0aG9uLTNlZjFhIiwiYXV0aF90aW1lIjoxNzY0NDUxNTk5LCJ1c2VyX2lkIjoiWENFSHB5UWZaNGd5M0x0dFB0QkhDaVZkRDVmMiIsInN1YiI6IlhDRUhweVFmWjRneTNMdHRQdEJIQ2lWZEQ1ZjIiLCJpYXQiOjE3NjQ0NjE4ODIsImV4cCI6MTc2NDQ2NTQ4MiwiZW1haWwiOiJhbnNodW1hbnNpbmdoNjRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDY1NzM2Mzc3MjQxMDI5MDgzNzciXSwiZW1haWwiOlsiYW5zaHVtYW5zaW5naDY0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.A_1eJmuLkUF3hlPiaH2DiaU-fDxrOi53P8HMJKFBKR9paHAPiUpcE3oYFmihcCcF3V_77GF8aR-KHXSpfu-RN7iunJNA6tDfYtvPjLvsoIjE65TSFZU1TzN5qHvmH7vT9vjmxZWh0iQKpI6c3hYlGUhDXbvTs_rVUUuZNnovUVciNQJW8Sb8XJISQJzYRLNlVsKWlrAVTtr7b7Fy9n2wY6s2T5kbUNwJ1Wj9bJ7GlBzfCIKpsSmOJjjdKvXhOZUdZ8-PTGCUHgDShGtPH8vBgfrUrhsl9Rl9IC-ZvIVbHbN6yinfQ35eM2zF3iEEbW_-ldugNcTtR1VgnPKlcKqN0Q'}
     
-    print(f"Intent: {input_data['intent']}")
+    print(f"Intent: {input_data['text']}")
     print(f"Bearer Token: {input_data['bearer_token'][:50]}...")
     print("\nProcessing with CrewAI agents...\n")
     

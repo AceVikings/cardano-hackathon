@@ -8,11 +8,11 @@ from logging_config import get_logger
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Helper: parse amount and slippage from user intent
+# Helper: parse amount and slippage from user text
 # ─────────────────────────────────────────────────────────────────────────────
-def parse_amount_and_slippage(intent: str) -> Tuple[int, int]:
-    """Parse intent text to amount (lovelace) and slippage percent."""
-    text = intent.lower()
+def parse_amount_and_slippage(text: str) -> Tuple[int, int]:
+    """Parse text text to amount (lovelace) and slippage percent."""
+    text = text.lower()
 
     ada_amount = None
     slippage = None
@@ -46,14 +46,15 @@ def parse_amount_and_slippage(intent: str) -> Tuple[int, int]:
 
     if slippage is None:
         if "aggressive" in text or "fast" in text or "urgent" in text:
-            slippage = 3.0
+            slippage = 30
         elif "safe" in text or "conservative" in text or "low" in text:
-            slippage = 0.5
+            slippage = 50
         else:
-            slippage = 1.0
+            slippage = 10.0
 
     slippage_percent = int(round(slippage)) if slippage is not None else 1
     amount_in_lovelace = int(round(ada_amount * 1_000_000))
+    print(f"Parsed amount: {amount_in_lovelace} lovelace, slippage: {slippage_percent}%")
     return amount_in_lovelace, slippage_percent
 
 
@@ -61,12 +62,12 @@ def parse_amount_and_slippage(intent: str) -> Tuple[int, int]:
 # CrewAI Tool: swap ADA -> MIN via minswap service
 # ─────────────────────────────────────────────────────────────────────────────
 @tool("swap_ada_to_min")
-def swap_ada_to_min(intent: str, bearer_token: str) -> str:
+def swap_ada_to_min(text: str, bearer_token: str) -> str:
     """
     Swap ADA to MIN tokens via the Minswap service.
 
     Args:
-        intent: A natural language string describing the swap, e.g. "Swap 10 ADA with 2% slippage".
+        text: A natural language string describing the swap, e.g. "Swap 10 ADA with 2% slippage".
         bearer_token: The authorization bearer token for the swap API.
 
     Returns:
@@ -74,7 +75,7 @@ def swap_ada_to_min(intent: str, bearer_token: str) -> str:
     """
     import json
 
-    amount_in, slippage = parse_amount_and_slippage(intent)
+    amount_in, slippage = parse_amount_and_slippage(text)
 
     payload = {
         "assetIn": "lovelace",
@@ -140,10 +141,10 @@ class ResearchCrew:
                 Task(
                     description=(
                         "The user wants to swap ADA for MIN tokens.\n\n"
-                        "User intent (contains ADA amount and slippage): {intent}\n\n"
+                        "User text (contains ADA amount and slippage): {text}\n\n"
                         "Bearer token for authentication: {bearer_token}\n\n"
-                        "Extract the ADA amount and slippage percentage from the intent, "
-                        "then call the swap_ada_to_min tool with the intent string and the bearer_token provided above."
+                        "Extract the ADA amount and slippage percentage from the text, "
+                        "then call the swap_ada_to_min tool with the text string and the bearer_token provided above."
                     ),
                     expected_output="The JSON result from the swap tool containing the unsigned transaction hash or error details.",
                     agent=swap_agent,

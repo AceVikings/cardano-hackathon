@@ -146,3 +146,14 @@ INFO:     202.62.82.52:60169 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d2
 INFO:     202.62.82.52:60436 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
 INFO:     46.101.200.95:56142 - "GET /availability HTTP/1.1" 200 OK
 INFO:     46.101.200.95:26555 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:19651 - "GET /availability HTTP/1.1" 200 OK
+INFO:     184.105.247.195:22116 - "GET / HTTP/1.1" 404 Not Found
+INFO:     184.105.247.227:15903 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     184.105.247.219:42035 - "GET /?format=json HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     46.101.200.95:37958 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:53025 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:54889 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:55035 - "GET /availability HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.

@@ -95,3 +95,10 @@ INFO:     46.101.200.95:63757 - "GET /availability HTTP/1.1" 200 OK
 INFO:     46.101.200.95:42265 - "GET /availability HTTP/1.1" 200 OK
 INFO:     46.101.200.95:65459 - "GET /availability HTTP/1.1" 200 OK
 INFO:     172.236.228.218:36602 - "GET / HTTP/1.1" 404 Not Found
+INFO:     46.101.200.95:56831 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:54711 - "GET /availability HTTP/1.1" 200 OK
+INFO:     172.104.210.105:53921 - "GET / HTTP/1.1" 404 Not Found
+INFO:     172.104.11.34:27780 - "GET / HTTP/1.1" 404 Not Found
+INFO:     46.101.200.95:41970 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:39724 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:52774 - "GET /availability HTTP/1.1" 200 OK
