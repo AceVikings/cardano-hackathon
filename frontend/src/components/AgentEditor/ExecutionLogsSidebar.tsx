@@ -427,7 +427,7 @@ export default function ExecutionLogsSidebar({
                                   <p className="text-xs text-sea-mist/40 mb-1">Summary</p>
                                   <div className="bg-emerald-500/10 rounded-lg p-3">
                                     <pre className="text-xs text-emerald-400 whitespace-pre-wrap">
-                                      {String(nodeResult.output.summary)}
+                                      {String(nodeResult.output.summary as string)}
                                     </pre>
                                   </div>
                                 </div>
@@ -436,7 +436,7 @@ export default function ExecutionLogsSidebar({
                               {/* Explorer Link (for swap agent) */}
                               {nodeResult.output?.explorerLink && (
                                 <a
-                                  href={String(nodeResult.output.explorerLink)}
+                                  href={String(nodeResult.output.explorerLink as string)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center gap-2 text-xs text-aqua-glow hover:text-aqua-glow/80 transition-colors"

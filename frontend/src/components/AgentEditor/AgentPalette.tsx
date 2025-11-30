@@ -198,10 +198,14 @@ export default function AgentPalette({ onDragStart }: AgentPaletteProps) {
                     </div>
                     <p className="text-sea-mist/50 uppercase tracking-wider mb-2">Output</p>
                     <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-bioluminescent/20 text-bioluminescent font-mono">
-                        {agent.output.name}
-                      </span>
-                      <span className="text-sea-mist/40">{agent.output.type}</span>
+                      {(agent.outputs || (agent.output ? [agent.output] : [])).map((out) => (
+                        <div key={out.name} className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 rounded bg-bioluminescent/20 text-bioluminescent font-mono">
+                            {out.name}
+                          </span>
+                          <span className="text-sea-mist/40">{out.type}</span>
+                        </div>
+                      ))}
                     </div>
                   </motion.div>
                 )}
