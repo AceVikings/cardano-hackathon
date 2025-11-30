@@ -182,7 +182,8 @@ export interface AvailableAgent {
   invokeUrl: string;
   executionCost: string;
   inputParameters: AgentInputParameter[];
-  output: AgentOutput;
+  output?: AgentOutput; // Legacy single output
+  outputs?: AgentOutput[]; // Multiple outputs
 }
 
 export interface AvailableAgentsResponse {

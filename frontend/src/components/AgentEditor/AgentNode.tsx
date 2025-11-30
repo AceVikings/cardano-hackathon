@@ -12,7 +12,8 @@ export interface AgentNodeData {
   invokeUrl?: string;
   executionCost?: string;
   inputParameters?: Array<{ name: string; type: string; description: string }>;
-  output?: { name: string; type: string; description: string };
+  output?: { name: string; type: string; description: string }; // Legacy single output
+  outputs?: Array<{ name: string; type: string; description: string }>; // Multiple outputs
   inputValues?: Record<string, { value: string; source: 'manual' | 'connection' }>;
 }
 
@@ -45,10 +46,11 @@ function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
   const statusColor = statusColors[data.status];
   
   const inputs = data.inputParameters || [];
-  const output = data.output;
+  // Support both single output and multiple outputs
+  const outputs = data.outputs || (data.output ? [data.output] : []);
   
   // Calculate node height based on number of inputs/outputs
-  const handleCount = Math.max(inputs.length, output ? 1 : 0);
+  const handleCount = Math.max(inputs.length, outputs.length);
   const handleSpacing = 28; // pixels between handles
   const minContentHeight = 80;
   const calculatedHeight = Math.max(minContentHeight, handleCount * handleSpacing + 40);
@@ -131,19 +133,20 @@ function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
 
           {/* Output Labels (Right side) */}
           <div className="flex flex-col gap-1 items-end">
-            {output && (
-              <>
-                <span className="text-[9px] text-sea-mist/40 uppercase tracking-wider mb-1">Output</span>
-                <div 
-                  className="flex items-center gap-1.5"
-                  style={{ height: handleSpacing - 4 }}
-                >
-                  <span className="text-[9px] text-sea-mist/40">({output.type})</span>
-                  <span className="text-[10px] text-coral/80 font-mono">{output.name}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-coral/60" />
-                </div>
-              </>
+            {outputs.length > 0 && (
+              <span className="text-[9px] text-sea-mist/40 uppercase tracking-wider mb-1">Outputs</span>
             )}
+            {outputs.map((output, index) => (
+              <div 
+                key={output.name}
+                className="flex items-center gap-1.5"
+                style={{ height: handleSpacing - 4, marginTop: index === 0 ? 0 : 4 }}
+              >
+                <span className="text-[9px] text-sea-mist/40">({output.type})</span>
+                <span className="text-[10px] text-coral/80 font-mono">{output.name}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-coral/60" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -165,16 +168,21 @@ function AgentNode({ data, selected }: NodeProps & { data: AgentNodeData }) {
         );
       })}
 
-      {/* Output Handle (Right side) */}
-      {output && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id={`output-${output.name}`}
-          className={handleStyles.output}
-          style={{ top: 95 }}
-        />
-      )}
+      {/* Dynamic Output Handles (Right side) */}
+      {outputs.map((output, index) => {
+        // Calculate vertical position for each output handle
+        const topOffset = 95 + (index * handleSpacing);
+        return (
+          <Handle
+            key={`output-${output.name}`}
+            type="source"
+            position={Position.Right}
+            id={`output-${output.name}`}
+            className={handleStyles.output}
+            style={{ top: topOffset }}
+          />
+        );
+      })}
 
       {/* Trigger Output Handle (Bottom) */}
       <Handle

@@ -144,6 +144,7 @@ export default function AgentPalette({ onDragStart }: AgentPaletteProps) {
                     executionCost: agent.executionCost,
                     inputParameters: agent.inputParameters,
                     output: agent.output,
+                    outputs: agent.outputs,
                   })}
                   className="flex items-center gap-3 p-3 rounded-lg bg-abyss/50 border border-sea-mist/10 cursor-grab hover:border-aqua-glow/30 transition-colors"
                   whileHover={{ scale: 1.02 }}
