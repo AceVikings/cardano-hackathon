@@ -276,17 +276,115 @@ router.post("/swap-token-agent/invoke", async (req, res) => {
       unsignedTxHex = agentResponse;
     }
 
+    // -------------------------------------------------
+    // Fallback: if agent didn't return unsigned tx, call minswap API directly
+    // -------------------------------------------------
     if (!unsignedTxHex) {
-      // Agent did not return an unsigned transaction we can parse
       console.warn(
-        "Swap agent did not return a parsable unsigned tx:",
-        result.result
+        "Swap agent did not return a parsable unsigned tx, calling minswap API directly..."
       );
-      return res.json({
-        success: true,
-        output: { raw: result.result },
-        note: "No unsigned transaction found in agent response; skipping signing.",
-      });
+
+      // Parse amount and slippage from textInput (similar to Python agent logic)
+      const parseAmountAndSlippage = (intent) => {
+        const text = intent.toLowerCase();
+        let adaAmount = null;
+        let slippage = null;
+
+        // Parse slippage
+        const slipMatch = text.match(
+          /slippage\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*%?/
+        );
+        if (slipMatch) {
+          slippage = parseFloat(slipMatch[1]);
+        } else {
+          const percentMatch = text.match(/(\d+(?:\.\d+)?)\s*%/);
+          if (percentMatch) {
+            slippage = parseFloat(percentMatch[1]);
+          }
+        }
+
+        // Parse ADA amount
+        const adaMatch = text.match(/(\d+(?:\.\d+)?)\s*(ada|lovelace)\b/);
+        if (adaMatch) {
+          adaAmount = parseFloat(adaMatch[1]);
+        } else {
+          const numMatch = text.match(/(\d+(?:\.\d+)?)/);
+          if (numMatch) {
+            adaAmount = parseFloat(numMatch[1]);
+          }
+        }
+
+        // Defaults
+        if (adaAmount === null) adaAmount = 5.0;
+        if (slippage === null) {
+          if (/aggressive|fast|urgent/.test(text)) slippage = 3.0;
+          else if (/safe|conservative|low/.test(text)) slippage = 0.5;
+          else slippage = 1.0;
+        }
+
+        return {
+          amountInLovelace: Math.round(adaAmount * 1_000_000),
+          slippagePercent: Math.round(slippage),
+        };
+      };
+
+      const { amountInLovelace, slippagePercent } =
+        parseAmountAndSlippage(textInput);
+
+      const minswapUrl =
+        process.env.MINSWAP_API_URL ||
+        `http://localhost:${process.env.PORT || 5001}/api/swap/minswap/swap`;
+
+      console.debug(
+        `Calling minswap API: amount=${amountInLovelace} lovelace, slippage=${slippagePercent}%`
+      );
+
+      try {
+        const swapResponse = await axios.post(
+          minswapUrl,
+          {
+            assetIn: "lovelace",
+            assetOut:
+              "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e",
+            amountIn: String(amountInLovelace),
+            slippagePercent: slippagePercent,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: req.headers.authorization || "",
+            },
+            timeout: 30000,
+          }
+        );
+
+        const swapData = swapResponse.data;
+        unsignedTxHex =
+          swapData.unsignedTx || swapData.unsignedTxHex || swapData.tx || null;
+
+        if (!unsignedTxHex) {
+          console.error("Minswap API did not return unsigned tx:", swapData);
+          return res.json({
+            success: true,
+            output: { raw: result.result, swapApiResponse: swapData },
+            note: "Neither agent nor minswap API returned an unsigned transaction.",
+          });
+        }
+
+        console.debug("Got unsigned tx from minswap API fallback");
+      } catch (swapErr) {
+        console.error(
+          "Minswap API fallback failed:",
+          swapErr.response?.data || swapErr.message
+        );
+        return res.status(500).json({
+          success: false,
+          error:
+            "Failed to get unsigned transaction from both agent and minswap API",
+          agentResult: result.result,
+          swapError: swapErr.response?.data || swapErr.message,
+        });
+      }
     }
 
     console.debug(
