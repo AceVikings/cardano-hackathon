@@ -115,6 +115,34 @@ const workflowSchema = new mongoose.Schema({
     failedExecutions: { type: Number, default: 0 },
     lastExecutedAt: Date,
   },
+  // Recent execution logs (keep last 10)
+  recentExecutions: [{
+    executionId: String,
+    triggerType: String,
+    status: { type: String, enum: ['pending', 'running', 'success', 'failed', 'partial'] },
+    executedAt: { type: Date, default: Date.now },
+    duration: Number, // in milliseconds
+    summary: {
+      totalNodes: Number,
+      successfulNodes: Number,
+      failedNodes: Number,
+    },
+    // Agent-wise execution logs
+    agentLogs: [{
+      nodeId: String,
+      agentId: String,
+      label: String,
+      status: { type: String, enum: ['pending', 'running', 'success', 'failed'] },
+      startTime: Date,
+      endTime: Date,
+      duration: Number,
+      inputs: mongoose.Schema.Types.Mixed,
+      output: mongoose.Schema.Types.Mixed,
+      error: String,
+    }],
+    // Full trigger data
+    triggerData: mongoose.Schema.Types.Mixed,
+  }],
   // Timestamps
   createdAt: {
     type: Date,

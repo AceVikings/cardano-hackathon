@@ -309,6 +309,10 @@ async function executeWorkflow(
       } else if (node.type === "agent") {
         // Resolve inputs from connections and configured values
         const inputs = resolveNodeInputs(node, edges, nodeOutputs);
+        
+        // Store inputs in nodeResult for logging
+        nodeResult.inputs = inputs;
+        nodeResult.agentId = node.data?.agentId;
 
         // Execute the agent
         const result = await executeAgentNode(node, inputs, {
@@ -318,9 +322,9 @@ async function executeWorkflow(
         });
 
         if (result.success) {
-          nodeOutputs.set(node.id, result.output);
+          nodeOutputs.set(node.id, result.output || result);
           nodeResult.status = ExecutionStatus.SUCCESS;
-          nodeResult.output = result.output;
+          nodeResult.output = result.output || result;
         } else {
           throw new Error(result.error || "Agent execution failed");
         }

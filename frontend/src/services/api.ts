@@ -481,4 +481,67 @@ export async function validateWorkflow(id: string): Promise<WorkflowValidation> 
   };
 }
 
+// ============================================================================
+// Recent Executions API
+// ============================================================================
+
+export interface AgentLog {
+  nodeId: string;
+  agentId: string;
+  label: string;
+  status: 'pending' | 'running' | 'success' | 'failed';
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  inputs?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  error?: string;
+}
+
+export interface RecentExecution {
+  executionId: string;
+  workflowId: string;
+  workflowName: string;
+  triggerType: string;
+  status: 'pending' | 'running' | 'success' | 'failed' | 'partial';
+  executedAt: string;
+  duration?: number;
+  summary: {
+    totalNodes: number;
+    successfulNodes: number;
+    failedNodes: number;
+  };
+  agentLogs: AgentLog[];
+  triggerData?: Record<string, unknown>;
+}
+
+export interface RecentExecutionsResponse {
+  success: boolean;
+  executions: RecentExecution[];
+  count: number;
+  totalAvailable: number;
+}
+
+/**
+ * Get recent executions across all user workflows
+ */
+export async function getRecentExecutions(limit?: number): Promise<RecentExecution[]> {
+  const queryParam = limit ? `?limit=${limit}` : '';
+  const response = await apiRequest<RecentExecutionsResponse>(
+    `/workflows/executions/recent${queryParam}`
+  );
+  return response.executions;
+}
+
+/**
+ * Get execution history for a specific workflow
+ */
+export async function getWorkflowExecutions(workflowId: string, limit?: number): Promise<RecentExecution[]> {
+  const queryParam = limit ? `?limit=${limit}` : '';
+  const response = await apiRequest<{ success: boolean; executions: RecentExecution[]; count: number }>(
+    `/workflows/${workflowId}/executions${queryParam}`
+  );
+  return response.executions;
+}
+
 export { apiRequest };

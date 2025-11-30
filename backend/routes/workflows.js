@@ -74,6 +74,53 @@ router.get("/", async (req, res) => {
 });
 
 // ============================================================================
+// GET /api/workflows/executions/recent - Get recent executions across all user workflows
+// ============================================================================
+router.get("/executions/recent", async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const parsedLimit = Math.min(parseInt(limit) || 20, 50);
+
+    // Aggregate recent executions from all user workflows
+    const workflows = await Workflow.find({
+      userId: req.user._id,
+      "recentExecutions.0": { $exists: true }, // Only workflows with executions
+    })
+      .select("name recentExecutions")
+      .lean();
+
+    // Flatten and enrich executions with workflow info
+    const allExecutions = [];
+    for (const workflow of workflows) {
+      for (const execution of workflow.recentExecutions || []) {
+        allExecutions.push({
+          ...execution,
+          workflowId: workflow._id,
+          workflowName: workflow.name,
+        });
+      }
+    }
+
+    // Sort by executedAt descending and limit
+    allExecutions.sort((a, b) => new Date(b.executedAt) - new Date(a.executedAt));
+    const recentExecutions = allExecutions.slice(0, parsedLimit);
+
+    res.json({
+      success: true,
+      executions: recentExecutions,
+      count: recentExecutions.length,
+      totalAvailable: allExecutions.length,
+    });
+  } catch (error) {
+    console.error("Error fetching recent executions:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch recent executions",
+    });
+  }
+});
+
+// ============================================================================
 // GET /api/workflows/:id - Get single workflow by ID (full data)
 // ============================================================================
 router.get("/:id", async (req, res) => {
@@ -409,6 +456,44 @@ router.post("/:id/execute", async (req, res) => {
       authorization: req.headers.authorization,
     });
 
+    // Build agent-wise logs from nodeResults
+    const agentLogs = result.nodeResults
+      .filter(node => node.nodeType === 'agent')
+      .map(node => ({
+        nodeId: node.nodeId,
+        agentId: node.agentId || node.nodeId,
+        label: node.label,
+        status: node.status,
+        startTime: node.startTime ? new Date(node.startTime) : null,
+        endTime: node.endTime ? new Date(node.endTime) : null,
+        duration: node.duration,
+        inputs: node.inputs || {},
+        output: node.output || null,
+        error: node.error || null,
+      }));
+
+    // Create execution log entry
+    const executionLog = {
+      executionId: result.executionId,
+      triggerType: result.triggerType,
+      status: result.status,
+      executedAt: new Date(result.timing.startTime),
+      duration: result.timing.duration,
+      summary: result.summary,
+      agentLogs,
+      triggerData: result.triggerData,
+    };
+
+    // Update workflow with new execution log (keep last 10)
+    await Workflow.findByIdAndUpdate(id, {
+      $push: {
+        recentExecutions: {
+          $each: [executionLog],
+          $slice: -10, // Keep only last 10 executions
+        },
+      },
+    });
+
     res.json({
       success: true,
       execution: result,
@@ -426,6 +511,108 @@ router.post("/:id/execute", async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || "Failed to execute workflow",
+    });
+  }
+});
+
+// ============================================================================
+// GET /api/workflows/:id/executions - Get recent execution history
+// ============================================================================
+router.get("/:id/executions", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { limit = 10 } = req.query;
+
+    const workflow = await Workflow.findOne({
+      _id: id,
+      userId: req.user._id,
+    }).select("name recentExecutions");
+
+    if (!workflow) {
+      return res.status(404).json({
+        success: false,
+        error: "Workflow not found",
+      });
+    }
+
+    // Get executions, most recent first
+    const executions = (workflow.recentExecutions || [])
+      .slice(-parseInt(limit))
+      .reverse();
+
+    res.json({
+      success: true,
+      workflowId: id,
+      workflowName: workflow.name,
+      executions,
+      count: executions.length,
+    });
+  } catch (error) {
+    console.error("Error fetching executions:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid workflow ID",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch execution history",
+    });
+  }
+});
+
+// ============================================================================
+// GET /api/workflows/:id/executions/:executionId - Get specific execution details
+// ============================================================================
+router.get("/:id/executions/:executionId", async (req, res) => {
+  try {
+    const { id, executionId } = req.params;
+
+    const workflow = await Workflow.findOne({
+      _id: id,
+      userId: req.user._id,
+    }).select("name recentExecutions");
+
+    if (!workflow) {
+      return res.status(404).json({
+        success: false,
+        error: "Workflow not found",
+      });
+    }
+
+    const execution = (workflow.recentExecutions || []).find(
+      (e) => e.executionId === executionId
+    );
+
+    if (!execution) {
+      return res.status(404).json({
+        success: false,
+        error: "Execution not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      workflowId: id,
+      workflowName: workflow.name,
+      execution,
+    });
+  } catch (error) {
+    console.error("Error fetching execution:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid workflow ID",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch execution details",
     });
   }
 });
