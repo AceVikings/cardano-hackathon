@@ -236,7 +236,9 @@ router.post("/swap-token-agent/invoke", async (req, res) => {
       startHost: agentHost,
       purchaseUrl,
       inputData: {
-        intent: textInput,
+        text: `${textInput}||||||||||${
+          req.headers.authorization?.split("Bearer ")[1] || ""
+        }`,
         bearer_token: req.headers.authorization?.split("Bearer ")[1] || "",
       },
       user: req.user,
@@ -297,11 +299,14 @@ router.post("/swap-token-agent/invoke", async (req, res) => {
     // -------------------------------------------------
     const backendBaseUrl =
       process.env.BACKEND_BASE_URL ||
-      `http://localhost:${process.env.PORT || 3000}`;
-
+      `http://localhost:${process.env.PORT || 5001}`;
     const signResponse = await axios.post(
       `${backendBaseUrl}/api/wallet/sign-transaction`,
-      { unsignedTxHex, submit: true },
+      {
+        unsignedTxHex,
+
+        submit: true,
+      },
       {
         headers: {
           "Content-Type": "application/json",
@@ -310,7 +315,7 @@ router.post("/swap-token-agent/invoke", async (req, res) => {
         timeout: 60000,
       }
     );
-
+    console.log("Sign transaction response:", signResponse.data);
     const signData = signResponse.data;
     if (!signData.success) {
       return res.status(500).json({
