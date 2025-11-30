@@ -141,10 +141,15 @@ class ResearchCrew:
                 Task(
                     description=(
                         "The user wants to swap ADA for MIN tokens.\n\n"
-                        "User text (contains ADA amount and slippage): {text}\n\n"
-                        "Bearer token for authentication: {bearer_token}\n\n"
-                        "Extract the ADA amount and slippage percentage from the text, "
-                        "then call the swap_ada_to_min tool with the text string and the bearer_token provided above."
+                        "The incoming input uses the delimiter '||||||||||' to separate two parts:"
+                        " the user message and the bearer token.\n\n"
+                        "User text (contains ADA amount and slippage): {text.split('||||||||||')[0].strip()}\n\n"
+                        "Bearer token for authentication: {text}\n\n"
+                        "Split the input on the delimiter '||||||||||' and assign the first part to"
+                        " `user_text` and the second part to `bearer_token`. Extract the ADA amount"
+                        " and slippage percentage from `user_text`, then call the `swap_ada_to_min` tool"
+                        " with `user_text` as the first argument and `bearer_token` as the second argument"
+                        " (i.e. `swap_ada_to_min(user_text, bearer_token)`)."
                     ),
                     expected_output="The JSON result from the swap tool containing the unsigned transaction hash or error details.",
                     agent=swap_agent,

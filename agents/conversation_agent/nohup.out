@@ -157,3 +157,10 @@ INFO:     46.101.200.95:54889 - "GET /availability HTTP/1.1" 200 OK
 INFO:     46.101.200.95:55035 - "GET /availability HTTP/1.1" 200 OK
 WARNING:  Invalid HTTP request received.
 WARNING:  Invalid HTTP request received.
+INFO:     46.101.200.95:41975 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:45765 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:33140 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:48690 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:52403 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:49330 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:32578 - "GET /availability HTTP/1.1" 200 OK

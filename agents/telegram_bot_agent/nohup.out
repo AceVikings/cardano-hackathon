@@ -102,3 +102,11 @@ INFO:     172.104.11.34:27780 - "GET / HTTP/1.1" 404 Not Found
 INFO:     46.101.200.95:41970 - "GET /availability HTTP/1.1" 200 OK
 INFO:     46.101.200.95:39724 - "GET /availability HTTP/1.1" 200 OK
 INFO:     46.101.200.95:52774 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:34212 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:65496 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:39436 - "GET /availability HTTP/1.1" 200 OK
+INFO:     3.67.36.202:40636 - "GET /input_schema HTTP/1.1" 200 OK
+INFO:     46.101.200.95:32036 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:54851 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:47680 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:26552 - "GET /availability HTTP/1.1" 200 OK
