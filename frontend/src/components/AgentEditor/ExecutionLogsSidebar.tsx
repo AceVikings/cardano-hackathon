@@ -422,21 +422,21 @@ export default function ExecutionLogsSidebar({
                               </div>
 
                               {/* Summary (for swap agent) */}
-                              {nodeResult.output?.summary && (
+                              {typeof nodeResult.output?.summary === 'string' && (
                                 <div>
                                   <p className="text-xs text-sea-mist/40 mb-1">Summary</p>
                                   <div className="bg-emerald-500/10 rounded-lg p-3">
                                     <pre className="text-xs text-emerald-400 whitespace-pre-wrap">
-                                      {String(nodeResult.output.summary as string)}
+                                      {nodeResult.output.summary}
                                     </pre>
                                   </div>
                                 </div>
                               )}
 
                               {/* Explorer Link (for swap agent) */}
-                              {nodeResult.output?.explorerLink && (
+                              {typeof nodeResult.output?.explorerLink === 'string' && (
                                 <a
-                                  href={String(nodeResult.output.explorerLink as string)}
+                                  href={nodeResult.output.explorerLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center gap-2 text-xs text-aqua-glow hover:text-aqua-glow/80 transition-colors"
