@@ -5,11 +5,41 @@ const { authenticate } = require("../middleware/auth");
 const {
   executeWorkflow,
   validateWorkflow,
+  getLiveExecution,
   TriggerType,
 } = require("../services/workflowExecutor");
 
 // All routes require authentication
 router.use(authenticate);
+
+// ============================================================================
+// GET /api/workflows/executions/live/:executionId - Get live execution status
+// ============================================================================
+router.get("/executions/live/:executionId", async (req, res) => {
+  try {
+    const { executionId } = req.params;
+    
+    const liveExecution = getLiveExecution(executionId);
+    
+    if (!liveExecution) {
+      return res.status(404).json({
+        success: false,
+        error: "Execution not found or has expired",
+      });
+    }
+    
+    res.json({
+      success: true,
+      execution: liveExecution,
+    });
+  } catch (error) {
+    console.error("Error fetching live execution:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch live execution status",
+    });
+  }
+});
 
 // ============================================================================
 // GET /api/workflows - Get all workflows for current user (basic info only)
@@ -439,6 +469,7 @@ router.delete("/:id", async (req, res) => {
 router.post("/:id/execute", async (req, res) => {
   try {
     const { id } = req.params;
+    const { executionId: clientExecutionId } = req.body;
 
     // Validate workflow first
     const validation = await validateWorkflow(id, { userId: req.user._id });
@@ -454,6 +485,7 @@ router.post("/:id/execute", async (req, res) => {
     const result = await executeWorkflow(id, TriggerType.MANUAL, null, {
       userId: req.user._id,
       authorization: req.headers.authorization,
+      executionId: clientExecutionId, // Pass client-provided executionId if available
     });
 
     // Build agent-wise logs from nodeResults

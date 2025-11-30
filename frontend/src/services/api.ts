@@ -448,17 +448,27 @@ export interface WorkflowValidation {
 }
 
 /**
+ * Generate a unique execution ID for live polling
+ */
+export function generateExecutionId(): string {
+  return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
  * Execute a workflow manually
  */
 export async function executeWorkflow(
   id: string, 
-  triggerData?: Record<string, unknown>
+  options?: { triggerData?: Record<string, unknown>; executionId?: string }
 ): Promise<ExecutionResult> {
   const response = await apiRequest<{ success: boolean; execution: ExecutionResult }>(
     `/workflows/${id}/execute`,
     {
       method: 'POST',
-      body: JSON.stringify({ triggerData }),
+      body: JSON.stringify({ 
+        triggerData: options?.triggerData,
+        executionId: options?.executionId,
+      }),
     }
   );
   return response.execution;
@@ -542,6 +552,63 @@ export async function getWorkflowExecutions(workflowId: string, limit?: number):
     `/workflows/${workflowId}/executions${queryParam}`
   );
   return response.executions;
+}
+
+// ============================================================================
+// Live Execution Polling API
+// ============================================================================
+
+export interface LiveExecution {
+  executionId: string;
+  workflowId: string;
+  workflowName?: string;
+  status: 'pending' | 'running' | 'success' | 'failed' | 'partial';
+  startTime: string;
+  currentNode: string | null;
+  totalNodes?: number;
+  completed?: boolean;
+  nodeResults: Array<{
+    nodeId: string;
+    nodeType: string;
+    label?: string;
+    agentId?: string;
+    status: 'pending' | 'running' | 'success' | 'failed';
+    startTime?: string;
+    endTime?: string;
+    duration?: number;
+    inputs?: Record<string, unknown>;
+    output?: Record<string, unknown>;
+    error?: string;
+  }>;
+  summary?: {
+    totalNodes: number;
+    successfulNodes: number;
+    failedNodes: number;
+  };
+  timing?: {
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+  };
+  updatedAt?: number;
+}
+
+/**
+ * Get live execution status for polling during workflow execution
+ */
+export async function getLiveExecutionStatus(executionId: string): Promise<LiveExecution | null> {
+  try {
+    const response = await apiRequest<{ success: boolean; execution: LiveExecution }>(
+      `/workflows/executions/live/${executionId}`
+    );
+    return response.execution;
+  } catch (error) {
+    // Return null if execution not found (404) - execution may have completed
+    if (error instanceof Error && error.message.includes('not found')) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export { apiRequest };

@@ -31,6 +31,41 @@ const TriggerType = {
   WEBHOOK: "webhook",
 };
 
+// ============================================================================
+// Live Execution Tracker (in-memory store for active executions)
+// ============================================================================
+const liveExecutions = new Map();
+
+function getLiveExecution(executionId) {
+  return liveExecutions.get(executionId) || null;
+}
+
+function updateLiveExecution(executionId, data) {
+  const existing = liveExecutions.get(executionId) || {};
+  liveExecutions.set(executionId, { ...existing, ...data, updatedAt: Date.now() });
+}
+
+function addLiveNodeUpdate(executionId, nodeUpdate) {
+  const execution = liveExecutions.get(executionId);
+  if (execution) {
+    const nodeIndex = execution.nodeResults?.findIndex(n => n.nodeId === nodeUpdate.nodeId);
+    if (nodeIndex >= 0) {
+      execution.nodeResults[nodeIndex] = { ...execution.nodeResults[nodeIndex], ...nodeUpdate };
+    } else {
+      execution.nodeResults = execution.nodeResults || [];
+      execution.nodeResults.push(nodeUpdate);
+    }
+    execution.updatedAt = Date.now();
+  }
+}
+
+function cleanupLiveExecution(executionId) {
+  // Keep execution data for 5 minutes after completion for final poll
+  setTimeout(() => {
+    liveExecutions.delete(executionId);
+  }, 5 * 60 * 1000);
+}
+
 /**
  * Build execution graph from workflow nodes and edges
  * Returns nodes in topological order (dependencies first)
@@ -91,21 +126,32 @@ function resolveNodeInputs(node, edges, nodeOutputs) {
   const nodeData = node.data || {};
   const inputParameters = nodeData.inputParameters || [];
   const configuredValues = nodeData.inputValues || new Map();
-  console.log("INPUT", inputParameters);
-  console.log("CONFIGURED VALUES", configuredValues);
+  console.log("[Resolver] Node:", node.id);
+  console.log("[Resolver] INPUT params:", inputParameters);
+  console.log("[Resolver] CONFIGURED VALUES:", configuredValues);
+  console.log("[Resolver] Available node outputs:", [...nodeOutputs.keys()]);
+  
   for (const param of inputParameters) {
     // Check if there's a connection providing this input
+    const targetHandleName = `input-${param.name}`;
     const incomingEdge = edges.find(
-      (e) => e.target === node.id && e.targetHandle === `input-${param.name}`
+      (e) => e.target === node.id && e.targetHandle === targetHandleName
     );
+
+    console.log(`[Resolver] Looking for edge to ${targetHandleName}:`, incomingEdge ? 
+      `Found! source=${incomingEdge.source}, sourceHandle=${incomingEdge.sourceHandle}` : 
+      "Not found");
 
     if (incomingEdge && nodeOutputs.has(incomingEdge.source)) {
       // Get value from connected node's output
       const sourceOutput = nodeOutputs.get(incomingEdge.source);
       const sourceHandle = incomingEdge.sourceHandle;
+      
+      console.log(`[Resolver] Source output keys:`, Object.keys(sourceOutput || {}));
 
       if (sourceHandle && sourceHandle.startsWith("output-")) {
         const outputName = sourceHandle.replace("output-", "");
+        console.log(`[Resolver] Extracting output field: ${outputName} = `, sourceOutput[outputName]);
         inputs[param.name] = sourceOutput[outputName];
       } else {
         // Default output
@@ -222,7 +268,8 @@ async function executeWorkflow(
   triggerData = {},
   context = {}
 ) {
-  const executionId = `exec_${Date.now()}_${Math.random()
+  // Use client-provided executionId or generate one
+  const executionId = context.executionId || `exec_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   const startTime = Date.now();
@@ -231,6 +278,16 @@ async function executeWorkflow(
     `[Executor] Starting execution ${executionId} for workflow ${workflowId}`
   );
   console.log(`[Executor] Trigger: ${triggerType}`, triggerData);
+
+  // Initialize live execution tracking
+  updateLiveExecution(executionId, {
+    executionId,
+    workflowId,
+    status: ExecutionStatus.RUNNING,
+    startTime: new Date(startTime).toISOString(),
+    nodeResults: [],
+    currentNode: null,
+  });
 
   // Fetch the workflow
   const workflow = await Workflow.findById(workflowId);
@@ -286,6 +343,12 @@ async function executeWorkflow(
   let overallStatus = ExecutionStatus.SUCCESS;
   let failedNodes = 0;
 
+  // Update live execution with workflow info
+  updateLiveExecution(executionId, {
+    workflowName: workflow.name,
+    totalNodes: executionOrder.length,
+  });
+
   // Execute nodes in order
   for (const node of executionOrder) {
     const nodeStartTime = Date.now();
@@ -293,9 +356,14 @@ async function executeWorkflow(
       nodeId: node.id,
       nodeType: node.type,
       label: node.data?.label,
-      status: ExecutionStatus.PENDING,
+      agentId: node.data?.agentId || null,
+      status: ExecutionStatus.RUNNING,
       startTime: new Date(nodeStartTime).toISOString(),
     };
+
+    // Update live status - node is now running
+    updateLiveExecution(executionId, { currentNode: node.id });
+    addLiveNodeUpdate(executionId, { ...nodeResult });
 
     try {
       if (node.type === "trigger") {
@@ -342,6 +410,9 @@ async function executeWorkflow(
     nodeResult.endTime = new Date().toISOString();
     nodeResult.duration = Date.now() - nodeStartTime;
     nodeResults.push(nodeResult);
+    
+    // Update live status - node completed
+    addLiveNodeUpdate(executionId, { ...nodeResult });
   }
 
   // Determine overall status
@@ -392,6 +463,19 @@ async function executeWorkflow(
       duration: endTime - startTime,
     },
   };
+
+  // Update live execution with final status
+  updateLiveExecution(executionId, {
+    status: overallStatus,
+    currentNode: null,
+    nodeResults,
+    summary: executionResult.summary,
+    timing: executionResult.timing,
+    completed: true,
+  });
+  
+  // Schedule cleanup of live execution data
+  cleanupLiveExecution(executionId);
 
   console.log(
     `[Executor] Execution ${executionId} completed with status: ${overallStatus}`
@@ -459,6 +543,7 @@ module.exports = {
   executeWorkflow,
   validateWorkflow,
   buildExecutionGraph,
+  getLiveExecution,
   ExecutionStatus,
   TriggerType,
 };

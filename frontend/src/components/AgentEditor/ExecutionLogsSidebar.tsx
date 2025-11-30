@@ -9,22 +9,57 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
-import { useState } from "react";
-import type { ExecutionResult } from "../../services/api";
+import { useState, useEffect } from "react";
+import type { ExecutionResult, LiveExecution } from "../../services/api";
+import { getLiveExecutionStatus } from "../../services/api";
 
 interface ExecutionLogsSidebarProps {
   isExecuting: boolean;
   executionResult: ExecutionResult | null;
+  executionId?: string | null;
   onClose: () => void;
 }
 
 export default function ExecutionLogsSidebar({
   isExecuting,
   executionResult,
+  executionId,
   onClose,
 }: ExecutionLogsSidebarProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [liveExecution, setLiveExecution] = useState<LiveExecution | null>(null);
+
+  // Poll for live execution status while executing
+  useEffect(() => {
+    if (!isExecuting || !executionId) {
+      setLiveExecution(null);
+      return;
+    }
+
+    let isCancelled = false;
+    
+    const pollLiveStatus = async () => {
+      try {
+        const status = await getLiveExecutionStatus(executionId);
+        if (!isCancelled && status) {
+          setLiveExecution(status);
+        }
+      } catch (error) {
+        console.error("Failed to poll live status:", error);
+      }
+    };
+
+    // Poll immediately, then every 1.5 seconds
+    pollLiveStatus();
+    const interval = setInterval(pollLiveStatus, 1500);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [isExecuting, executionId]);
 
   const toggleExpanded = (nodeId: string) => {
     const newExpanded = new Set(expandedNodes);
@@ -71,6 +106,10 @@ export default function ExecutionLogsSidebar({
     return null;
   }
 
+  // Determine what data to display - prefer final result, otherwise use live data
+  const nodeResults = liveExecution?.nodeResults || [];
+  const currentNode = liveExecution?.currentNode;
+
   return (
     <AnimatePresence>
       <motion.div
@@ -85,7 +124,7 @@ export default function ExecutionLogsSidebar({
           <div className="flex items-center gap-3">
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                isExecuting
+                isExecuting && !executionResult
                   ? "bg-aqua-glow/20"
                   : executionResult?.status === "success"
                   ? "bg-emerald-500/20"
@@ -94,7 +133,7 @@ export default function ExecutionLogsSidebar({
                   : "bg-amber-500/20"
               }`}
             >
-              {isExecuting ? (
+              {isExecuting && !executionResult ? (
                 <Loader2 className="w-4 h-4 text-aqua-glow animate-spin" />
               ) : (
                 <Play
@@ -110,12 +149,18 @@ export default function ExecutionLogsSidebar({
             </div>
             <div>
               <h3 className="text-foam-white font-semibold text-sm">
-                {isExecuting ? "Executing..." : "Execution Complete"}
+                {isExecuting && !executionResult ? "Executing..." : "Execution Complete"}
               </h3>
               {executionResult && (
                 <p className="text-xs text-sea-mist/60">
                   {executionResult.summary.successfulNodes}/
                   {executionResult.summary.totalNodes} nodes
+                </p>
+              )}
+              {isExecuting && !executionResult && liveExecution?.totalNodes && (
+                <p className="text-xs text-sea-mist/60">
+                  {nodeResults.filter(n => n.status === 'success').length}/
+                  {liveExecution.totalNodes} nodes
                 </p>
               )}
             </div>
@@ -130,21 +175,142 @@ export default function ExecutionLogsSidebar({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
+          {/* Live Execution View */}
           {isExecuting && !executionResult && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full border-2 border-aqua-glow/30 animate-pulse" />
-                <Loader2 className="w-8 h-8 text-aqua-glow animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <div className="space-y-4">
+              {/* Overall Status */}
+              <div className={`rounded-xl p-4 ${getStatusColor('running')}`}>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="font-medium">Running Workflow</span>
+                </div>
+                {liveExecution?.workflowName && (
+                  <p className="text-xs mt-1 opacity-80">
+                    {liveExecution.workflowName}
+                  </p>
+                )}
               </div>
-              <p className="text-sea-mist mt-4 text-sm">
-                Running workflow agents...
-              </p>
-              <p className="text-sea-mist/50 mt-1 text-xs">
-                This may take a moment
-              </p>
+
+              {/* Live Node Results */}
+              {nodeResults.length > 0 ? (
+                <div>
+                  <h4 className="text-xs font-semibold text-sea-mist/60 uppercase tracking-wider mb-3">
+                    Live Agent Logs
+                  </h4>
+                  <div className="space-y-2">
+                    {nodeResults.map((nodeResult) => (
+                      <div
+                        key={nodeResult.nodeId}
+                        className={`bg-sea-mist/5 rounded-xl overflow-hidden ${
+                          currentNode === nodeResult.nodeId ? 'ring-1 ring-aqua-glow/50' : ''
+                        }`}
+                      >
+                        {/* Node Header */}
+                        <button
+                          onClick={() => toggleExpanded(nodeResult.nodeId)}
+                          className="w-full flex items-center justify-between p-3 hover:bg-sea-mist/5 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                nodeResult.status === "success"
+                                  ? "bg-emerald-400"
+                                  : nodeResult.status === "failed"
+                                  ? "bg-coral"
+                                  : nodeResult.status === "running"
+                                  ? "bg-aqua-glow animate-pulse"
+                                  : "bg-sea-mist/40"
+                              }`}
+                            />
+                            <span className="text-sm font-medium text-foam-white">
+                              {nodeResult.label || nodeResult.agentId || nodeResult.nodeId}
+                            </span>
+                            <span
+                              className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(
+                                nodeResult.status
+                              )}`}
+                            >
+                              {nodeResult.status}
+                            </span>
+                          </div>
+                          {nodeResult.status === 'running' ? (
+                            <Loader2 className="w-4 h-4 text-aqua-glow animate-spin" />
+                          ) : expandedNodes.has(nodeResult.nodeId) ? (
+                            <ChevronDown className="w-4 h-4 text-sea-mist/40" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-sea-mist/40" />
+                          )}
+                        </button>
+
+                        {/* Node Details */}
+                        <AnimatePresence>
+                          {expandedNodes.has(nodeResult.nodeId) && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="border-t border-sea-mist/10"
+                            >
+                              <div className="p-3 space-y-3">
+                                {/* Timing */}
+                                {nodeResult.duration && (
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-sea-mist/40">Duration</span>
+                                    <span className="text-sea-mist/80">
+                                      {nodeResult.duration}ms
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Output */}
+                                {nodeResult.output &&
+                                  Object.keys(nodeResult.output).length > 0 && (
+                                    <div>
+                                      <p className="text-xs text-sea-mist/40 mb-1">Output</p>
+                                      <div className="bg-abyss/50 rounded-lg p-2">
+                                        <pre className="text-xs text-emerald-400/80 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                          {JSON.stringify(nodeResult.output, null, 2)}
+                                        </pre>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                {/* Error */}
+                                {nodeResult.error && (
+                                  <div>
+                                    <p className="text-xs text-sea-mist/40 mb-1">Error</p>
+                                    <div className="bg-coral/10 rounded-lg p-2">
+                                      <pre className="text-xs text-coral overflow-x-auto whitespace-pre-wrap">
+                                        {nodeResult.error}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full border-2 border-aqua-glow/30 animate-pulse" />
+                    <Loader2 className="w-6 h-6 text-aqua-glow animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <p className="text-sea-mist mt-3 text-sm">Starting workflow...</p>
+                  <p className="text-sea-mist/50 mt-1 text-xs">
+                    Waiting for agent execution
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
+          {/* Final Execution Result */}
           {executionResult && (
             <div className="space-y-4">
               {/* Overall Status */}
@@ -255,12 +421,37 @@ export default function ExecutionLogsSidebar({
                                 </span>
                               </div>
 
+                              {/* Summary (for swap agent) */}
+                              {nodeResult.output?.summary && (
+                                <div>
+                                  <p className="text-xs text-sea-mist/40 mb-1">Summary</p>
+                                  <div className="bg-emerald-500/10 rounded-lg p-3">
+                                    <pre className="text-xs text-emerald-400 whitespace-pre-wrap">
+                                      {String(nodeResult.output.summary)}
+                                    </pre>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Explorer Link (for swap agent) */}
+                              {nodeResult.output?.explorerLink && (
+                                <a
+                                  href={String(nodeResult.output.explorerLink)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-xs text-aqua-glow hover:text-aqua-glow/80 transition-colors"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  View on Cardanoscan
+                                </a>
+                              )}
+
                               {/* Output */}
                               {nodeResult.output &&
                                 Object.keys(nodeResult.output).length > 0 && (
                                   <div>
                                     <p className="text-xs text-sea-mist/40 mb-1">
-                                      Output
+                                      Full Output
                                     </p>
                                     <div className="bg-abyss/50 rounded-lg p-2">
                                       <pre className="text-xs text-emerald-400/80 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">

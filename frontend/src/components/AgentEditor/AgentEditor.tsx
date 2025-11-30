@@ -31,6 +31,7 @@ import {
   getWorkflowById,
   updateWorkflowStatus,
   executeWorkflow as executeWorkflowApi,
+  generateExecutionId,
   type WorkflowNode,
   type WorkflowEdge,
   type ExecutionResult,
@@ -77,6 +78,7 @@ function AgentEditorCanvas() {
   const [isSaving, setIsSaving] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
+  const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null);
   const [showExecutionLogs, setShowExecutionLogs] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -324,14 +326,18 @@ function AgentEditorCanvas() {
       return;
     }
 
+    // Generate execution ID upfront for live polling
+    const execId = generateExecutionId();
+    
     // Close config sidebar and show execution logs
     setSelectedNodeId(null);
     setExecutionResult(null);
+    setCurrentExecutionId(execId);
     setShowExecutionLogs(true);
     setIsExecuting(true);
     
     try {
-      const result = await executeWorkflowApi(workflowId);
+      const result = await executeWorkflowApi(workflowId, { executionId: execId });
       setExecutionResult(result);
       
       if (result.status === 'success') {
@@ -351,7 +357,7 @@ function AgentEditorCanvas() {
       const message = err instanceof Error ? err.message : 'Failed to execute workflow';
       error('Execution failed', message);
       setExecutionResult({
-        executionId: 'error',
+        executionId: execId,
         workflowId: workflowId,
         workflowName: workflowName,
         triggerType: 'manual',
@@ -646,9 +652,11 @@ function AgentEditorCanvas() {
           <ExecutionLogsSidebar
             isExecuting={isExecuting}
             executionResult={executionResult}
+            executionId={currentExecutionId}
             onClose={() => {
               setShowExecutionLogs(false);
               setExecutionResult(null);
+              setCurrentExecutionId(null);
             }}
           />
         </div>
