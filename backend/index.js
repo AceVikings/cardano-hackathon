@@ -9,6 +9,7 @@ const authRoutes = require("./routes/auth");
 const walletRoutes = require("./routes/wallet");
 const workflowRoutes = require("./routes/workflows");
 const swapRoutes = require("./routes/swap");
+const agentsRoutes = require("./routes/agents");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -45,7 +46,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/workflows", workflowRoutes);
 app.use("/api/swap", swapRoutes);
-
+app.use("/api/agents/", agentsRoutes);
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -175,6 +176,7 @@ app.get("/api/available-agents", (req, res) => {
     {
       id: "swap-token-agent",
       name: "Swap Token Agent",
+      url: "http://139.84.155.199:8008",
       description:
         "Agent for generating token swap transactions on Cardano using Minswap DEX",
       invokeUrl: "/api/agents/swap-token-agent/invoke",
@@ -225,7 +227,7 @@ app.get("/api/available-agents", (req, res) => {
     },
     {
       id: "research-agent",
-      url: "http://localhost:8100",
+      url: "http://139.84.155.199:8012",
       name: "Research Agent",
       description:
         "Agent for performing web research, summarization, and data extraction",
@@ -253,7 +255,7 @@ app.get("/api/available-agents", (req, res) => {
     },
     {
       id: "telegram-bot-agent",
-      url: "http://localhost:8200",
+      url: "http://139.84.155.199:8004",
       name: "Telegram Bot Agent",
       description:
         "Agent that integrates with Telegram to receive commands and send notifications",
@@ -261,12 +263,7 @@ app.get("/api/available-agents", (req, res) => {
       executionCost: "0.5 ADA",
       inputParameters: [
         {
-          name: "chatId",
-          type: "string",
-          description: "Telegram chat identifier to send messages to",
-        },
-        {
-          name: "message",
+          name: "inputText",
           type: "string",
           description: "Message content to send",
         },
