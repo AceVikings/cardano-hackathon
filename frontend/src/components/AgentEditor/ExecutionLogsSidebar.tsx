@@ -1,7 +1,17 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, CheckCircle, XCircle, AlertCircle, Loader2, Clock, ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
-import type { ExecutionResult, ExecutionNodeResult } from '../../services/api';
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  X,
+  Play,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Loader2,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
+import { useState } from "react";
+import type { ExecutionResult } from "../../services/api";
 
 interface ExecutionLogsSidebarProps {
   isExecuting: boolean;
@@ -28,13 +38,13 @@ export default function ExecutionLogsSidebar({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'success':
+      case "success":
         return <CheckCircle className="w-4 h-4 text-emerald-400" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="w-4 h-4 text-coral" />;
-      case 'partial':
+      case "partial":
         return <AlertCircle className="w-4 h-4 text-amber-400" />;
-      case 'running':
+      case "running":
         return <Loader2 className="w-4 h-4 text-aqua-glow animate-spin" />;
       default:
         return <Clock className="w-4 h-4 text-sea-mist/40" />;
@@ -43,16 +53,16 @@ export default function ExecutionLogsSidebar({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success':
-        return 'bg-emerald-500/20 text-emerald-400';
-      case 'failed':
-        return 'bg-coral/20 text-coral';
-      case 'partial':
-        return 'bg-amber-500/20 text-amber-400';
-      case 'running':
-        return 'bg-aqua-glow/20 text-aqua-glow';
+      case "success":
+        return "bg-emerald-500/20 text-emerald-400";
+      case "failed":
+        return "bg-coral/20 text-coral";
+      case "partial":
+        return "bg-amber-500/20 text-amber-400";
+      case "running":
+        return "bg-aqua-glow/20 text-aqua-glow";
       default:
-        return 'bg-sea-mist/10 text-sea-mist/60';
+        return "bg-sea-mist/10 text-sea-mist/60";
     }
   };
 
@@ -67,40 +77,45 @@ export default function ExecutionLogsSidebar({
         initial={{ x: 320, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 320, opacity: 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="absolute right-0 top-0 bottom-0 w-80 bg-deep-ocean/95 backdrop-blur-xl border-l border-sea-mist/10 shadow-xl shadow-black/20 z-20 flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-sea-mist/10">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              isExecuting 
-                ? 'bg-aqua-glow/20' 
-                : executionResult?.status === 'success' 
-                  ? 'bg-emerald-500/20' 
-                  : executionResult?.status === 'failed'
-                    ? 'bg-coral/20'
-                    : 'bg-amber-500/20'
-            }`}>
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                isExecuting
+                  ? "bg-aqua-glow/20"
+                  : executionResult?.status === "success"
+                  ? "bg-emerald-500/20"
+                  : executionResult?.status === "failed"
+                  ? "bg-coral/20"
+                  : "bg-amber-500/20"
+              }`}
+            >
               {isExecuting ? (
                 <Loader2 className="w-4 h-4 text-aqua-glow animate-spin" />
               ) : (
-                <Play className={`w-4 h-4 ${
-                  executionResult?.status === 'success' 
-                    ? 'text-emerald-400' 
-                    : executionResult?.status === 'failed'
-                      ? 'text-coral'
-                      : 'text-amber-400'
-                }`} />
+                <Play
+                  className={`w-4 h-4 ${
+                    executionResult?.status === "success"
+                      ? "text-emerald-400"
+                      : executionResult?.status === "failed"
+                      ? "text-coral"
+                      : "text-amber-400"
+                  }`}
+                />
               )}
             </div>
             <div>
               <h3 className="text-foam-white font-semibold text-sm">
-                {isExecuting ? 'Executing...' : 'Execution Complete'}
+                {isExecuting ? "Executing..." : "Execution Complete"}
               </h3>
               {executionResult && (
                 <p className="text-xs text-sea-mist/60">
-                  {executionResult.summary.successfulNodes}/{executionResult.summary.totalNodes} nodes
+                  {executionResult.summary.successfulNodes}/
+                  {executionResult.summary.totalNodes} nodes
                 </p>
               )}
             </div>
@@ -121,18 +136,28 @@ export default function ExecutionLogsSidebar({
                 <div className="w-16 h-16 rounded-full border-2 border-aqua-glow/30 animate-pulse" />
                 <Loader2 className="w-8 h-8 text-aqua-glow animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               </div>
-              <p className="text-sea-mist mt-4 text-sm">Running workflow agents...</p>
-              <p className="text-sea-mist/50 mt-1 text-xs">This may take a moment</p>
+              <p className="text-sea-mist mt-4 text-sm">
+                Running workflow agents...
+              </p>
+              <p className="text-sea-mist/50 mt-1 text-xs">
+                This may take a moment
+              </p>
             </div>
           )}
 
           {executionResult && (
             <div className="space-y-4">
               {/* Overall Status */}
-              <div className={`rounded-xl p-4 ${getStatusColor(executionResult.status)}`}>
+              <div
+                className={`rounded-xl p-4 ${getStatusColor(
+                  executionResult.status
+                )}`}
+              >
                 <div className="flex items-center gap-2">
                   {getStatusIcon(executionResult.status)}
-                  <span className="font-medium capitalize">{executionResult.status}</span>
+                  <span className="font-medium capitalize">
+                    {executionResult.status}
+                  </span>
                 </div>
                 <p className="text-xs mt-1 opacity-80">
                   Duration: {executionResult.timing.duration}ms
@@ -178,16 +203,25 @@ export default function ExecutionLogsSidebar({
                         className="w-full flex items-center justify-between p-3 hover:bg-sea-mist/5 transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${
-                            nodeResult.status === 'success' ? 'bg-emerald-400' :
-                            nodeResult.status === 'failed' ? 'bg-coral' :
-                            nodeResult.status === 'running' ? 'bg-aqua-glow animate-pulse' :
-                            'bg-sea-mist/40'
-                          }`} />
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              nodeResult.status === "success"
+                                ? "bg-emerald-400"
+                                : nodeResult.status === "failed"
+                                ? "bg-coral"
+                                : nodeResult.status === "running"
+                                ? "bg-aqua-glow animate-pulse"
+                                : "bg-sea-mist/40"
+                            }`}
+                          />
                           <span className="text-sm font-medium text-foam-white">
                             {nodeResult.label || nodeResult.nodeId}
                           </span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(nodeResult.status)}`}>
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(
+                              nodeResult.status
+                            )}`}
+                          >
                             {nodeResult.status}
                           </span>
                         </div>
@@ -203,7 +237,7 @@ export default function ExecutionLogsSidebar({
                         {expandedNodes.has(nodeResult.nodeId) && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
+                            animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                             className="border-t border-sea-mist/10"
@@ -211,28 +245,41 @@ export default function ExecutionLogsSidebar({
                             <div className="p-3 space-y-3">
                               {/* Timing */}
                               <div className="flex justify-between text-xs">
-                                <span className="text-sea-mist/40">Duration</span>
+                                <span className="text-sea-mist/40">
+                                  Duration
+                                </span>
                                 <span className="text-sea-mist/80">
-                                  {nodeResult.duration ? `${nodeResult.duration}ms` : '-'}
+                                  {nodeResult.duration
+                                    ? `${nodeResult.duration}ms`
+                                    : "-"}
                                 </span>
                               </div>
 
                               {/* Output */}
-                              {nodeResult.output && Object.keys(nodeResult.output).length > 0 && (
-                                <div>
-                                  <p className="text-xs text-sea-mist/40 mb-1">Output</p>
-                                  <div className="bg-abyss/50 rounded-lg p-2">
-                                    <pre className="text-xs text-emerald-400/80 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
-                                      {JSON.stringify(nodeResult.output, null, 2)}
-                                    </pre>
+                              {nodeResult.output &&
+                                Object.keys(nodeResult.output).length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-sea-mist/40 mb-1">
+                                      Output
+                                    </p>
+                                    <div className="bg-abyss/50 rounded-lg p-2">
+                                      <pre className="text-xs text-emerald-400/80 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                        {JSON.stringify(
+                                          nodeResult.output,
+                                          null,
+                                          2
+                                        )}
+                                      </pre>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
                               {/* Error */}
                               {nodeResult.error && (
                                 <div>
-                                  <p className="text-xs text-sea-mist/40 mb-1">Error</p>
+                                  <p className="text-xs text-sea-mist/40 mb-1">
+                                    Error
+                                  </p>
                                   <div className="bg-coral/10 rounded-lg p-2">
                                     <pre className="text-xs text-coral overflow-x-auto whitespace-pre-wrap">
                                       {nodeResult.error}
@@ -252,7 +299,10 @@ export default function ExecutionLogsSidebar({
               {/* Execution ID */}
               <div className="pt-2 border-t border-sea-mist/10">
                 <p className="text-xs text-sea-mist/40">
-                  Execution ID: <span className="font-mono text-sea-mist/60">{executionResult.executionId}</span>
+                  Execution ID:{" "}
+                  <span className="font-mono text-sea-mist/60">
+                    {executionResult.executionId}
+                  </span>
                 </p>
               </div>
             </div>

@@ -198,11 +198,18 @@ app.get("/api/available-agents", (req, res) => {
           description: "The total amount of fromToken to swap",
         },
       ],
-      output: {
-        name: "toTokenAmount",
-        type: "number",
-        description: "The estimated amount of toToken received",
-      },
+      outputs: [
+        {
+          name: "txHash",
+          type: "string",
+          description: "The transaction hash if submitted",
+        },
+        {
+          name: "summary",
+          type: "string",
+          description: "Human-readable summary of the swap result",
+        },
+      ],
     },
     {
       id: "conversation-agent",
@@ -219,11 +226,18 @@ app.get("/api/available-agents", (req, res) => {
           description: "The input text for conversation processing",
         },
       ],
-      output: {
-        name: "outputText",
-        type: "string",
-        description: "The generated conversational response",
-      },
+      outputs: [
+        {
+          name: "outputText",
+          type: "string",
+          description: "The generated conversational response",
+        },
+        {
+          name: "summary",
+          type: "string",
+          description: "Summary of the conversation response",
+        },
+      ],
     },
     {
       id: "research-agent",
@@ -235,23 +249,18 @@ app.get("/api/available-agents", (req, res) => {
       executionCost: "1 ADA",
       inputParameters: [
         {
-          name: "query",
+          name: "inputText",
           type: "string",
           description: "Search or research query to investigate",
         },
+      ],
+      outputs: [
         {
-          name: "maxResults",
-          type: "number",
-          description:
-            "Maximum number of sources or results to return (optional)",
-          required: false,
+          name: "summary",
+          type: "string",
+          description: "Concise summary of findings",
         },
       ],
-      output: {
-        name: "summary",
-        type: "string",
-        description: "Concise summary of findings",
-      },
     },
     {
       id: "telegram-bot-agent",
@@ -268,11 +277,18 @@ app.get("/api/available-agents", (req, res) => {
           description: "Message content to send",
         },
       ],
-      output: {
-        name: "status",
-        type: "string",
-        description: "Result status (e.g., sent, failed)",
-      },
+      outputs: [
+        {
+          name: "status",
+          type: "string",
+          description: "Result status (e.g., sent, failed)",
+        },
+        {
+          name: "summary",
+          type: "string",
+          description: "Summary of the telegram action",
+        },
+      ],
     },
   ];
   res.json({ agents });

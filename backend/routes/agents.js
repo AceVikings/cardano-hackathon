@@ -423,14 +423,73 @@ router.post("/swap-token-agent/invoke", async (req, res) => {
       });
     }
 
+    // -------------------------------------------------
+    // Build detailed summary for the swap
+    // -------------------------------------------------
+    const txHash = signData.txHash || null;
+    const wasSubmitted = !!txHash;
+
+    // Parse swap details from textInput
+    const swapDetails = (() => {
+      const text = textInput.toLowerCase();
+      let fromToken = "ADA";
+      let toToken = "MIN";
+      let amount = "unknown";
+
+      // Try to extract amount
+      const adaMatch = text.match(/(\d+(?:\.\d+)?)\s*(ada|lovelace)/i);
+      if (adaMatch) {
+        amount = adaMatch[1] + " " + adaMatch[2].toUpperCase();
+      } else {
+        const numMatch = text.match(/(\d+(?:\.\d+)?)/);
+        if (numMatch) amount = numMatch[1] + " ADA";
+      }
+
+      // Try to extract token names
+      const swapMatch = text.match(
+        /swap\s+[\d.]+\s*\w*\s+(?:to|for|into)\s+(\w+)/i
+      );
+      if (swapMatch) {
+        toToken = swapMatch[1].toUpperCase();
+      }
+
+      return { fromToken, toToken, amount };
+    })();
+
+    // Block explorer URL (Preprod)
+    const explorerBaseUrl = "https://preprod.cardanoscan.io/transaction";
+    const explorerLink = txHash ? `${explorerBaseUrl}/${txHash}` : null;
+
+    // Build human-readable summary
+    let summary = "";
+    if (wasSubmitted) {
+      summary = `✅ Swap Completed Successfully!\n\n`;
+      summary += `📊 Swap Details:\n`;
+      summary += `   • From: ${swapDetails.amount}\n`;
+      summary += `   • To: ${swapDetails.toToken}\n\n`;
+      summary += `🔗 Transaction:\n`;
+      summary += `   • TX Hash: ${txHash}\n`;
+      summary += `   • Explorer: ${explorerLink}\n\n`;
+      summary += `⏱️ Status: Submitted to blockchain`;
+    } else {
+      summary = `📝 Swap Transaction Prepared (Not Submitted)\n\n`;
+      summary += `📊 Swap Details:\n`;
+      summary += `   • From: ${swapDetails.amount}\n`;
+      summary += `   • To: ${swapDetails.toToken}\n\n`;
+      summary += `⚠️ Transaction was signed but not submitted to the network.`;
+    }
+
     // Return the signed (and possibly submitted) tx along with original agent output
     res.json({
       success: true,
       output: {
         raw: result.result,
         signedTxHex: signData.signedTxHex,
-        txHash: signData.txHash || null,
-        submitted: !!signData.txHash,
+        txHash: txHash,
+        submitted: wasSubmitted,
+        explorerLink: explorerLink,
+        swapDetails: swapDetails,
+        summary: summary,
       },
     });
   } catch (error) {
