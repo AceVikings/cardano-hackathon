@@ -15,3 +15,134 @@ Input Schema:             http://0.0.0.0:8000/input_schema
 
 ======================================================================
 
+INFO:     Started server process [365812]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8000/docs
+Availability Check:       http://0.0.0.0:8000/availability
+Status Check:             http://0.0.0.0:8000/status
+Input Schema:             http://0.0.0.0:8000/input_schema
+
+======================================================================
+
+INFO:     202.62.82.52:51781 - "GET /docs HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51781 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     46.101.200.95:17192 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:42820 - "GET /availability HTTP/1.1" 200 OK
+2025-11-30 00:06:04,692 - masumi.payment - INFO - Initializing Payment instance for agent 7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f779c9071abf538dd0514caa37684ab1176c653345376cc379b84e247772bdb4b55 on Preprod network
+2025-11-30 00:06:04,692 - masumi.payment - INFO - Creating new payment request for agent 7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f779c9071abf538dd0514caa37684ab1176c653345376cc379b84e247772bdb4b55
+2025-11-30 00:06:04,693 - masumi.payment - INFO - Payment request payload prepared: {'agentIdentifier': '7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f779c9071abf538dd0514caa37684ab1176c653345376cc379b84e247772bdb4b55', 'network': 'Preprod', 'paymentType': 'Web3CardanoV1', 'payByTime': '2025-11-30T12:06:04.693Z', 'submitResultTime': '2025-12-01T00:06:04.693Z', 'identifierFromPurchaser': 'fa6425a77adc52a5fa56c833e4', 'inputHash': 'd92ec5678cd52dfa45881dc2b0cb1983964029b0bea66f98cca6d8f8bc2cb318'}
+2025-11-30 00:06:05,321 - masumi.payment - INFO - Starting payment status monitoring with 60 second interval
+Received data: identifier_from_purchaser='fa6425a77adc52a5fa56c833e4' input_data={'text': 'Give me a song name'}
+Received data.input_data: {'text': 'Give me a song name'}
+INFO:     202.62.82.52:57681 - "POST /start_job HTTP/1.1" 200 OK
+2025-11-30 00:06:05,322 - masumi.payment - INFO - Payment status monitoring task started
+2025-11-30 00:06:05,322 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:06:05,332 - masumi.payment - INFO - Status check completed, found 3 payments
+2025-11-30 00:06:05,333 - masumi.payment - INFO - Payment 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:06:05,333 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:57681 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:57787 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:57854 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:57921 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:57983 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:58183 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+2025-11-30 00:07:05,333 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:07:05,344 - masumi.payment - INFO - Status check completed, found 3 payments
+2025-11-30 00:07:05,344 - masumi.payment - INFO - Payment 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:07:05,344 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:58378 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:58441 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:58542 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:58603 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:58663 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:58745 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+2025-11-30 00:08:05,344 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:08:05,353 - masumi.payment - INFO - Status check completed, found 3 payments
+2025-11-30 00:08:05,354 - masumi.payment - INFO - Payment 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:08:05,354 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:58943 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59018 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59081 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59142 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59196 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59360 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+2025-11-30 00:09:05,354 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:09:05,363 - masumi.payment - INFO - Status check completed, found 3 payments
+2025-11-30 00:09:05,363 - masumi.payment - INFO - Payment 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:09:05,363 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:59563 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59652 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59746 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59824 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59883 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     202.62.82.52:59938 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+2025-11-30 00:10:05,363 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:10:05,374 - masumi.payment - INFO - Status check completed, found 3 payments
+2025-11-30 00:10:05,374 - masumi.payment - INFO - Payment 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000: onChainState=FundsLocked, NextAction=WaitingForExternalAction
+2025-11-30 00:10:05,374 - masumi.payment - INFO - Payment 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000 completed, removing from tracking
+2025-11-30 00:10:05,374 - masumi.payment - INFO - Calling callback function for payment 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Research Analyst                                                     │
+│                                                                              │
+│  Task: Research: {'text': 'Give me a song name'}                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────── ✅ Agent Final Answer ────────────────────────────╮
+│                                                                              │
+│  Agent: Research Analyst                                                     │
+│                                                                              │
+│  Final Answer:                                                               │
+│  A well-known and widely appreciated song is "Bohemian Rhapsody" by Queen.   │
+│  Released in 1975 as part of their album "A Night at the Opera," this song   │
+│  is recognized for its unusual structure, combining rock, ballad, and opera  │
+│  elements. Written by Freddie Mercury, it is celebrated for its complex      │
+│  composition, dynamic changes, and layered harmonies. "Bohemian Rhapsody"    │
+│  has remained a culturally iconic track, topping charts worldwide and        │
+│  featuring prominently in films, radio, and live concerts. It continues to   │
+│  be a significant piece in popular music history.                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Content Summarizer                                                   │
+│                                                                              │
+│  Task: Write summary                                                         │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────── ✅ Agent Final Answer ────────────────────────────╮
+│                                                                              │
+│  Agent: Content Summarizer                                                   │
+│                                                                              │
+│  Final Answer:                                                               │
+│  "Bohemian Rhapsody" by Queen is a renowned and widely admired song,         │
+│  released in 1975 as part of the album "A Night at the Opera." Written by    │
+│  Freddie Mercury, it is notable for its distinctive and unconventional       │
+│  structure that blends rock, ballad, and opera styles. The song is highly    │
+│  praised for its intricate composition, dynamic shifts, and rich, layered    │
+│  harmonies. Over the years, "Bohemian Rhapsody" has become a cultural icon,  │
+│  achieving top positions on music charts worldwide. It has had a lasting     │
+│  impact on popular culture, extensively featured in films, radio, and live   │
+│  performances, solidifying its place as a significant and influential piece  │
+│  in the history of popular music.                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+2025-11-30 00:10:12,115 - masumi.payment - WARNING - Attempted to check payment status with no payment IDs
+Result: "Bohemian Rhapsody" by Queen is a renowned and widely admired song, released in 1975 as part of the album "A Night at the Opera." Written by Freddie Mercury, it is notable for its distinctive and unconventional structure that blends rock, ballad, and opera styles. The song is highly praised for its intricate composition, dynamic shifts, and rich, layered harmonies. Over the years, "Bohemian Rhapsody" has become a cultural icon, achieving top positions on music charts worldwide. It has had a lasting impact on popular culture, extensively featured in films, radio, and live performances, solidifying its place as a significant and influential piece in the history of popular music.
+INFO:     202.62.82.52:60169 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+2025-11-30 00:10:12,131 - masumi.payment - INFO - Payment completion request successful for 21b00c11818c08c09814c026e027015806cd019ad5901d800e15835a49879b51223b4450d445169a71e2b80db71dde91c1f625033c6805e11688982e38d052a60019980016251b4285895b3434ba88648b4886b4d9e1a556912802c00b3c9d95ca48289f86038ec895940d1c03528d408312dfdc1c0a32030ed54ad541320d251a12de160355c096165a0b4d0d000e9b0783560d05d9d1120d160c8ab30e95555e035cb2cd14d495421600940ac896141a3c1550de1e666d5f4092034359143a835a8bd612c50b4c34c108c3450d3e7406db030bb68a9cd30a3c030355f0a9208d3ec89547c21e61a55110208868b18a0f055341747b49869808875910a8453494c94e053110d0b94a241cc6c2eb819aaf222a11098581551a2842a030ade34130fab8665c9ba28692a4eaaa2c4618058d20bc30d10c3c55462cc069b0e349b34900f093191c442224129b02f1998c1410a406c464c301d58842bb1c060c38b526f00239ccaf41a3f474e4ea3035c842d2b9a1b07101d40927f8ad90c03da80bcd0552d4ccfc49bdaca2b573e11114671543023381d55e6a3b4a2f6d85f96a61450c938e4489e2b93ef00cb478168020533ab67b239a0e54d0407bd1d1a67c0787ea4da6b3683cde08b68e1156eb12671653b481ecce870d31d95670bbc0aed45b8ef28759090000
+2025-11-30 00:10:12,131 - masumi.payment - INFO - Stopping payment status monitoring
+2025-11-30 00:10:12,131 - masumi.payment - INFO - No more payments to monitor, stopping monitoring task
+INFO:     202.62.82.52:60436 - "GET /status?job_id=e016af88-20ef-493a-9a4e-df4d26defc6f HTTP/1.1" 200 OK
+INFO:     46.101.200.95:56142 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:26555 - "GET /availability HTTP/1.1" 200 OK

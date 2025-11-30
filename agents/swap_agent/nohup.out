@@ -16,3 +16,193 @@ Input Schema:             http://0.0.0.0:8008/input_schema
 INFO:     27.61.34.93:36688 - "GET /docs HTTP/1.1" 200 OK
 INFO:     27.61.34.93:36688 - "GET /openapi.json HTTP/1.1" 200 OK
 INFO:     46.101.200.95:34503 - "GET /availability HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [244247]
+INFO:     Started server process [366380]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8008 (Press CTRL+C to quit)
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8008/docs
+Availability Check:       http://0.0.0.0:8008/availability
+Status Check:             http://0.0.0.0:8008/status
+Input Schema:             http://0.0.0.0:8008/input_schema
+
+======================================================================
+
+INFO:     46.101.200.95:33274 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:32653 - "GET /availability HTTP/1.1" 200 OK
+INFO:     46.101.200.95:31590 - "GET /availability HTTP/1.1" 200 OK
+2025-11-30 00:13:36,554 - masumi.payment - INFO - Initializing Payment instance for agent 7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f77b1cb3c37c6d955c3efdf7076eceb3d4182c691690f11e21436c84f25d57c1fd0 on Preprod network
+2025-11-30 00:13:36,555 - masumi.payment - INFO - Creating new payment request for agent 7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f77b1cb3c37c6d955c3efdf7076eceb3d4182c691690f11e21436c84f25d57c1fd0
+2025-11-30 00:13:36,555 - masumi.payment - INFO - Payment request payload prepared: {'agentIdentifier': '7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f77b1cb3c37c6d955c3efdf7076eceb3d4182c691690f11e21436c84f25d57c1fd0', 'network': 'Preprod', 'paymentType': 'Web3CardanoV1', 'payByTime': '2025-11-30T12:13:36.555Z', 'submitResultTime': '2025-12-01T00:13:36.555Z', 'identifierFromPurchaser': '62657f690037fde20f261d6fb1', 'inputHash': 'feb00c726a566ba7d043649aafb1b30455fdecf65c3a1f2f942586c549e795dc'}
+2025-11-30 00:13:37,162 - masumi.payment - INFO - Starting payment status monitoring with 60 second interval
+Received data: identifier_from_purchaser='62657f690037fde20f261d6fb1' input_data={'text': 'Swap 10 ADA to MIN', 'bearer_token': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjNzQ5NTFmNjBhMDE0NzE3ZjFlMzA4ZDZiMjgwZjQ4ZjFlODhmZGEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQW5zaHVtYW4gU2luZ2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS056S05yTVlQNTlEYklwVmJEeGppQ2pkcVRqd3dTWEFhUjJXc09iamFZdFZLTHVTYz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jYXJkYW5vLWhhY2thdGhvbi0zZWYxYSIsImF1ZCI6ImNhcmRhbm8taGFja2F0aG9uLTNlZjFhIiwiYXV0aF90aW1lIjoxNzY0NDUxNTk5LCJ1c2VyX2lkIjoiWENFSHB5UWZaNGd5M0x0dFB0QkhDaVZkRDVmMiIsInN1YiI6IlhDRUhweVFmWjRneTNMdHRQdEJIQ2lWZEQ1ZjIiLCJpYXQiOjE3NjQ0NjE2MTYsImV4cCI6MTc2NDQ2NTIxNiwiZW1haWwiOiJhbnNodW1hbnNpbmdoNjRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDY1NzM2Mzc3MjQxMDI5MDgzNzciXSwiZW1haWwiOlsiYW5zaHVtYW5zaW5naDY0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.OPVLWRCDVYsP222Rqra98pzfn1M7w_Hcp8Bbch9I9tEITHpDQalWEIpJq6TIy8Uz6JxxZynJC5LHre6ELDrDKSpy-h2dOYFixJdAgjaODuNUMfZ0mUavsTOfnp03SCY2gQF0rxaSITI5tSRDmVXI43RetdMwqDwKb6kgDD2vX0G73ULm2NrBnUF0By92M62XxwMFF04llTFw3k8vQ4gNNSHTmRkBhPZ2mpMX_yXJA_ARhIBQwQnmwpruxuQFbjJUkixew9BAQPmTkOorKKBJBD9Z5hq0NnJD0sOF5BjSIbyNaHzgmTf7tZ5eykP5GELtLdoUeGL_W_gk6_p2Mg5FAA'}
+Received data.input_data: {'text': 'Swap 10 ADA to MIN', 'bearer_token': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjNzQ5NTFmNjBhMDE0NzE3ZjFlMzA4ZDZiMjgwZjQ4ZjFlODhmZGEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQW5zaHVtYW4gU2luZ2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS056S05yTVlQNTlEYklwVmJEeGppQ2pkcVRqd3dTWEFhUjJXc09iamFZdFZLTHVTYz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jYXJkYW5vLWhhY2thdGhvbi0zZWYxYSIsImF1ZCI6ImNhcmRhbm8taGFja2F0aG9uLTNlZjFhIiwiYXV0aF90aW1lIjoxNzY0NDUxNTk5LCJ1c2VyX2lkIjoiWENFSHB5UWZaNGd5M0x0dFB0QkhDaVZkRDVmMiIsInN1YiI6IlhDRUhweVFmWjRneTNMdHRQdEJIQ2lWZEQ1ZjIiLCJpYXQiOjE3NjQ0NjE2MTYsImV4cCI6MTc2NDQ2NTIxNiwiZW1haWwiOiJhbnNodW1hbnNpbmdoNjRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDY1NzM2Mzc3MjQxMDI5MDgzNzciXSwiZW1haWwiOlsiYW5zaHVtYW5zaW5naDY0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.OPVLWRCDVYsP222Rqra98pzfn1M7w_Hcp8Bbch9I9tEITHpDQalWEIpJq6TIy8Uz6JxxZynJC5LHre6ELDrDKSpy-h2dOYFixJdAgjaODuNUMfZ0mUavsTOfnp03SCY2gQF0rxaSITI5tSRDmVXI43RetdMwqDwKb6kgDD2vX0G73ULm2NrBnUF0By92M62XxwMFF04llTFw3k8vQ4gNNSHTmRkBhPZ2mpMX_yXJA_ARhIBQwQnmwpruxuQFbjJUkixew9BAQPmTkOorKKBJBD9Z5hq0NnJD0sOF5BjSIbyNaHzgmTf7tZ5eykP5GELtLdoUeGL_W_gk6_p2Mg5FAA'}
+INFO:     202.62.82.52:62689 - "POST /start_job HTTP/1.1" 200 OK
+2025-11-30 00:13:37,163 - masumi.payment - INFO - Payment status monitoring task started
+2025-11-30 00:13:37,163 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:13:37,174 - masumi.payment - INFO - Status check completed, found 4 payments
+2025-11-30 00:13:37,175 - masumi.payment - INFO - Payment 3b0361c18c4119a04c04c01638038e4e920660436c2200a6452b809ce40ac011a84800cc0d0f4daadb6111e7403312607cd3c7678fb63844e1322a869c7c086b2dee571f5c486b9460c1047c34a8306a840406115122ad88953e546705cc15dd6cee6b40834f841f24081c3515205124979331373f86342a01882f0a43362c1102161f058d813395241b0c801d082111761a431064967a613c08360fa94d9539ba9f2b0230032d9243082a3f2b49113f0681a4120a3415342452247904020dae8f9239821131923910493a64481f1115ae112595380c081223f0255090a75f392992e91f2a2b1c046265f110f82c7d10cc8183435d9441618e91240aca182096383f92654420eda0e4381dc107838041c82f122080cd47208d6c057c75d0e725b1383448dc225d4d03008c60425e5dc708304298a862ce830ecba191b0420c5c06d5a231f2a082202a0d3acb532559fc4700821019c70b5df0896c30d3a7a0617d2562c5058092f6c1ccfabe603748a595d37bd6b8431c1faeeb9ae1fdd2158d068104cb415cb530f900c81d0854904499247ac292eb00785b7c040d30822b418b971a1117003557418cff5b24b4a5a560b6f87d61b65b29d1148cc6159214cdb1059bcd16cb55bad36da2c2edf65443b1d2ef66a85cae3749500000: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:13:37,175 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:62689 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:62767 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:62823 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:62887 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:62945 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:63143 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+2025-11-30 00:14:37,176 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:14:37,186 - masumi.payment - INFO - Status check completed, found 4 payments
+2025-11-30 00:14:37,187 - masumi.payment - INFO - Payment 3b0361c18c4119a04c04c01638038e4e920660436c2200a6452b809ce40ac011a84800cc0d0f4daadb6111e7403312607cd3c7678fb63844e1322a869c7c086b2dee571f5c486b9460c1047c34a8306a840406115122ad88953e546705cc15dd6cee6b40834f841f24081c3515205124979331373f86342a01882f0a43362c1102161f058d813395241b0c801d082111761a431064967a613c08360fa94d9539ba9f2b0230032d9243082a3f2b49113f0681a4120a3415342452247904020dae8f9239821131923910493a64481f1115ae112595380c081223f0255090a75f392992e91f2a2b1c046265f110f82c7d10cc8183435d9441618e91240aca182096383f92654420eda0e4381dc107838041c82f122080cd47208d6c057c75d0e725b1383448dc225d4d03008c60425e5dc708304298a862ce830ecba191b0420c5c06d5a231f2a082202a0d3acb532559fc4700821019c70b5df0896c30d3a7a0617d2562c5058092f6c1ccfabe603748a595d37bd6b8431c1faeeb9ae1fdd2158d068104cb415cb530f900c81d0854904499247ac292eb00785b7c040d30822b418b971a1117003557418cff5b24b4a5a560b6f87d61b65b29d1148cc6159214cdb1059bcd16cb55bad36da2c2edf65443b1d2ef66a85cae3749500000: onChainState=FundsLocked, NextAction=WaitingForExternalAction
+2025-11-30 00:14:37,187 - masumi.payment - INFO - Payment 3b0361c18c4119a04c04c01638038e4e920660436c2200a6452b809ce40ac011a84800cc0d0f4daadb6111e7403312607cd3c7678fb63844e1322a869c7c086b2dee571f5c486b9460c1047c34a8306a840406115122ad88953e546705cc15dd6cee6b40834f841f24081c3515205124979331373f86342a01882f0a43362c1102161f058d813395241b0c801d082111761a431064967a613c08360fa94d9539ba9f2b0230032d9243082a3f2b49113f0681a4120a3415342452247904020dae8f9239821131923910493a64481f1115ae112595380c081223f0255090a75f392992e91f2a2b1c046265f110f82c7d10cc8183435d9441618e91240aca182096383f92654420eda0e4381dc107838041c82f122080cd47208d6c057c75d0e725b1383448dc225d4d03008c60425e5dc708304298a862ce830ecba191b0420c5c06d5a231f2a082202a0d3acb532559fc4700821019c70b5df0896c30d3a7a0617d2562c5058092f6c1ccfabe603748a595d37bd6b8431c1faeeb9ae1fdd2158d068104cb415cb530f900c81d0854904499247ac292eb00785b7c040d30822b418b971a1117003557418cff5b24b4a5a560b6f87d61b65b29d1148cc6159214cdb1059bcd16cb55bad36da2c2edf65443b1d2ef66a85cae3749500000 completed, removing from tracking
+2025-11-30 00:14:37,187 - masumi.payment - INFO - Calling callback function for payment 3b0361c18c4119a04c04c01638038e4e920660436c2200a6452b809ce40ac011a84800cc0d0f4daadb6111e7403312607cd3c7678fb63844e1322a869c7c086b2dee571f5c486b9460c1047c34a8306a840406115122ad88953e546705cc15dd6cee6b40834f841f24081c3515205124979331373f86342a01882f0a43362c1102161f058d813395241b0c801d082111761a431064967a613c08360fa94d9539ba9f2b0230032d9243082a3f2b49113f0681a4120a3415342452247904020dae8f9239821131923910493a64481f1115ae112595380c081223f0255090a75f392992e91f2a2b1c046265f110f82c7d10cc8183435d9441618e91240aca182096383f92654420eda0e4381dc107838041c82f122080cd47208d6c057c75d0e725b1383448dc225d4d03008c60425e5dc708304298a862ce830ecba191b0420c5c06d5a231f2a082202a0d3acb532559fc4700821019c70b5df0896c30d3a7a0617d2562c5058092f6c1ccfabe603748a595d37bd6b8431c1faeeb9ae1fdd2158d068104cb415cb530f900c81d0854904499247ac292eb00785b7c040d30822b418b971a1117003557418cff5b24b4a5a560b6f87d61b65b29d1148cc6159214cdb1059bcd16cb55bad36da2c2edf65443b1d2ef66a85cae3749500000
+2025-11-30 00:14:37,592 - masumi.payment - INFO - Stopping payment status monitoring
+2025-11-30 00:14:37,592 - masumi.payment - INFO - No more payments to monitor, stopping monitoring task
+Error processing payment 3b0361c18c4119a04c04c01638038e4e920660436c2200a6452b809ce40ac011a84800cc0d0f4daadb6111e7403312607cd3c7678fb63844e1322a869c7c086b2dee571f5c486b9460c1047c34a8306a840406115122ad88953e546705cc15dd6cee6b40834f841f24081c3515205124979331373f86342a01882f0a43362c1102161f058d813395241b0c801d082111761a431064967a613c08360fa94d9539ba9f2b0230032d9243082a3f2b49113f0681a4120a3415342452247904020dae8f9239821131923910493a64481f1115ae112595380c081223f0255090a75f392992e91f2a2b1c046265f110f82c7d10cc8183435d9441618e91240aca182096383f92654420eda0e4381dc107838041c82f122080cd47208d6c057c75d0e725b1383448dc225d4d03008c60425e5dc708304298a862ce830ecba191b0420c5c06d5a231f2a082202a0d3acb532559fc4700821019c70b5df0896c30d3a7a0617d2562c5058092f6c1ccfabe603748a595d37bd6b8431c1faeeb9ae1fdd2158d068104cb415cb530f900c81d0854904499247ac292eb00785b7c040d30822b418b971a1117003557418cff5b24b4a5a560b6f87d61b65b29d1148cc6159214cdb1059bcd16cb55bad36da2c2edf65443b1d2ef66a85cae3749500000 for job e3505ec5-0e08-449c-8912-806d3afae4be: Missing required template variable 'Template variable 'intent' not found in inputs dictionary' in description
+
+
+╭────────────────────────────── Execution Traces ──────────────────────────────╮
+│                                                                              │
+│  🔍 Detailed execution traces are available!                                 │
+│                                                                              │
+│  View insights including:                                                    │
+│    • Agent decision-making process                                           │
+│    • Task execution flow and timing                                          │
+│    • Tool usage details                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Would you like to view your execution traces? [y/N] (20s timeout): 
+
+╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+│                                                                              │
+│  Info: Tracing has been disabled.                                            │
+│                                                                              │
+│  Your preference has been saved. Future Crew/Flow executions will not        │
+│  collect traces.                                                             │
+│                                                                              │
+│  To enable tracing later, do any one of these:                               │
+│  • Set tracing=True in your Crew/Flow code                                   │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file               │
+│  • Run: crewai traces enable                                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+INFO:     202.62.82.52:63370 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:63454 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:63511 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:63578 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:63638 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:63858 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64105 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64261 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64285 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64321 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64386 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64451 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     202.62.82.52:64528 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [366380]
+INFO:     Started server process [391109]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8008 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [391109]
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8008/docs
+Availability Check:       http://0.0.0.0:8008/availability
+Status Check:             http://0.0.0.0:8008/status
+Input Schema:             http://0.0.0.0:8008/input_schema
+
+======================================================================
+
+INFO:     Started server process [391576]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8008 (Press CTRL+C to quit)
+
+======================================================================
+🚀 Starting FastAPI server with Masumi integration...
+======================================================================
+API Documentation:        http://0.0.0.0:8008/docs
+Availability Check:       http://0.0.0.0:8008/availability
+Status Check:             http://0.0.0.0:8008/status
+Input Schema:             http://0.0.0.0:8008/input_schema
+
+======================================================================
+
+INFO:     202.62.82.52:65105 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 404 Not Found
+INFO:     202.62.82.52:65168 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 404 Not Found
+INFO:     202.62.82.52:65225 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 404 Not Found
+INFO:     202.62.82.52:65288 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 404 Not Found
+INFO:     202.62.82.52:49256 - "GET /status?job_id=e3505ec5-0e08-449c-8912-806d3afae4be HTTP/1.1" 404 Not Found
+2025-11-30 00:18:02,880 - masumi.payment - INFO - Initializing Payment instance for agent 7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f77b1cb3c37c6d955c3efdf7076eceb3d4182c691690f11e21436c84f25d57c1fd0 on Preprod network
+2025-11-30 00:18:02,880 - masumi.payment - INFO - Creating new payment request for agent 7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f77b1cb3c37c6d955c3efdf7076eceb3d4182c691690f11e21436c84f25d57c1fd0
+2025-11-30 00:18:02,880 - masumi.payment - INFO - Payment request payload prepared: {'agentIdentifier': '7e8bdaf2b2b919a3a4b94002cafb50086c0c845fe535d07a77ab7f77b1cb3c37c6d955c3efdf7076eceb3d4182c691690f11e21436c84f25d57c1fd0', 'network': 'Preprod', 'paymentType': 'Web3CardanoV1', 'payByTime': '2025-11-30T12:18:02.880Z', 'submitResultTime': '2025-12-01T00:18:02.880Z', 'identifierFromPurchaser': '3c32b224080aea9f59dff0c124', 'inputHash': '5c27a2e91398e9422acf11c09c4c69f872b7ad38b6b69fa6a93201c2edc2e776'}
+2025-11-30 00:18:03,510 - masumi.payment - INFO - Starting payment status monitoring with 60 second interval
+Received data: identifier_from_purchaser='3c32b224080aea9f59dff0c124' input_data={'text': 'Swap 10 ADA to MIN', 'bearer_token': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjNzQ5NTFmNjBhMDE0NzE3ZjFlMzA4ZDZiMjgwZjQ4ZjFlODhmZGEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQW5zaHVtYW4gU2luZ2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS056S05yTVlQNTlEYklwVmJEeGppQ2pkcVRqd3dTWEFhUjJXc09iamFZdFZLTHVTYz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jYXJkYW5vLWhhY2thdGhvbi0zZWYxYSIsImF1ZCI6ImNhcmRhbm8taGFja2F0aG9uLTNlZjFhIiwiYXV0aF90aW1lIjoxNzY0NDUxNTk5LCJ1c2VyX2lkIjoiWENFSHB5UWZaNGd5M0x0dFB0QkhDaVZkRDVmMiIsInN1YiI6IlhDRUhweVFmWjRneTNMdHRQdEJIQ2lWZEQ1ZjIiLCJpYXQiOjE3NjQ0NjE4ODIsImV4cCI6MTc2NDQ2NTQ4MiwiZW1haWwiOiJhbnNodW1hbnNpbmdoNjRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDY1NzM2Mzc3MjQxMDI5MDgzNzciXSwiZW1haWwiOlsiYW5zaHVtYW5zaW5naDY0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.A_1eJmuLkUF3hlPiaH2DiaU-fDxrOi53P8HMJKFBKR9paHAPiUpcE3oYFmihcCcF3V_77GF8aR-KHXSpfu-RN7iunJNA6tDfYtvPjLvsoIjE65TSFZU1TzN5qHvmH7vT9vjmxZWh0iQKpI6c3hYlGUhDXbvTs_rVUUuZNnovUVciNQJW8Sb8XJISQJzYRLNlVsKWlrAVTtr7b7Fy9n2wY6s2T5kbUNwJ1Wj9bJ7GlBzfCIKpsSmOJjjdKvXhOZUdZ8-PTGCUHgDShGtPH8vBgfrUrhsl9Rl9IC-ZvIVbHbN6yinfQ35eM2zF3iEEbW_-ldugNcTtR1VgnPKlcKqN0Q'}
+Received data.input_data: {'text': 'Swap 10 ADA to MIN', 'bearer_token': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjNzQ5NTFmNjBhMDE0NzE3ZjFlMzA4ZDZiMjgwZjQ4ZjFlODhmZGEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQW5zaHVtYW4gU2luZ2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS056S05yTVlQNTlEYklwVmJEeGppQ2pkcVRqd3dTWEFhUjJXc09iamFZdFZLTHVTYz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jYXJkYW5vLWhhY2thdGhvbi0zZWYxYSIsImF1ZCI6ImNhcmRhbm8taGFja2F0aG9uLTNlZjFhIiwiYXV0aF90aW1lIjoxNzY0NDUxNTk5LCJ1c2VyX2lkIjoiWENFSHB5UWZaNGd5M0x0dFB0QkhDaVZkRDVmMiIsInN1YiI6IlhDRUhweVFmWjRneTNMdHRQdEJIQ2lWZEQ1ZjIiLCJpYXQiOjE3NjQ0NjE4ODIsImV4cCI6MTc2NDQ2NTQ4MiwiZW1haWwiOiJhbnNodW1hbnNpbmdoNjRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDY1NzM2Mzc3MjQxMDI5MDgzNzciXSwiZW1haWwiOlsiYW5zaHVtYW5zaW5naDY0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.A_1eJmuLkUF3hlPiaH2DiaU-fDxrOi53P8HMJKFBKR9paHAPiUpcE3oYFmihcCcF3V_77GF8aR-KHXSpfu-RN7iunJNA6tDfYtvPjLvsoIjE65TSFZU1TzN5qHvmH7vT9vjmxZWh0iQKpI6c3hYlGUhDXbvTs_rVUUuZNnovUVciNQJW8Sb8XJISQJzYRLNlVsKWlrAVTtr7b7Fy9n2wY6s2T5kbUNwJ1Wj9bJ7GlBzfCIKpsSmOJjjdKvXhOZUdZ8-PTGCUHgDShGtPH8vBgfrUrhsl9Rl9IC-ZvIVbHbN6yinfQ35eM2zF3iEEbW_-ldugNcTtR1VgnPKlcKqN0Q'}
+INFO:     202.62.82.52:49322 - "POST /start_job HTTP/1.1" 200 OK
+2025-11-30 00:18:03,511 - masumi.payment - INFO - Payment status monitoring task started
+2025-11-30 00:18:03,511 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:18:03,524 - masumi.payment - INFO - Status check completed, found 5 payments
+2025-11-30 00:18:03,524 - masumi.payment - INFO - Payment 2980e605818c08c0cc119cc6004c404e013320cc05648b4dc75278d01d85482f82e0779175800d9a380066851564fc0e7e793bc56c098e7a20780435899a22f4f1d2c9cb3c3474e13a74c91e74119c42b489d20870796303cf85270ab228be81561be8f060e485290ac28e8780438c0b07c14cee290c0d03828e0f02006ac2a199c08f0c0988838e6d60a7828781464519c0074fe388a98c4a69cb2c0b2e8b078e87cfc64c4d5d678666a38a2983136699cac20f042d0c8121af53490e0e028f078b9b048b0a498d63a3ee066d8c62452c8d991ac1196ad1678ac14ac62e0ace01498ace552f8201c3a0f4b9080e040a2140cc44be06340f4874c00964c9342b5145269b6952d0bca1920161422424781fa9d5465562616028c237d905f03285d0331b095baad122806cf8750e364a9351895833378510a6667b817643245bcecb259261dae6149e15c0663068500646a9356491c3d4d2421a4a3b8c0e0ac07c50f1875c8af21ae8bebe140e0e00c4da7d20bb144381609376f828e0744a1809c1528cb6204d26dc65b262b160b1d82c158a64f6bd4ec015191c83a0a67012e2ae820791274f950c0612078d385310807a78681f5d0da4e1e1aa9a511f7ea312a7c1f2b2e9acde68b39ba80c1575a6db6913d81c8e5a4419c12784bbd0237674fdd0cc027900: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:18:03,524 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:49322 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:49419 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:49481 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:49539 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:49759 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:49973 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+2025-11-30 00:19:03,525 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:19:03,544 - masumi.payment - INFO - Status check completed, found 5 payments
+2025-11-30 00:19:03,544 - masumi.payment - INFO - Payment 2980e605818c08c0cc119cc6004c404e013320cc05648b4dc75278d01d85482f82e0779175800d9a380066851564fc0e7e793bc56c098e7a20780435899a22f4f1d2c9cb3c3474e13a74c91e74119c42b489d20870796303cf85270ab228be81561be8f060e485290ac28e8780438c0b07c14cee290c0d03828e0f02006ac2a199c08f0c0988838e6d60a7828781464519c0074fe388a98c4a69cb2c0b2e8b078e87cfc64c4d5d678666a38a2983136699cac20f042d0c8121af53490e0e028f078b9b048b0a498d63a3ee066d8c62452c8d991ac1196ad1678ac14ac62e0ace01498ace552f8201c3a0f4b9080e040a2140cc44be06340f4874c00964c9342b5145269b6952d0bca1920161422424781fa9d5465562616028c237d905f03285d0331b095baad122806cf8750e364a9351895833378510a6667b817643245bcecb259261dae6149e15c0663068500646a9356491c3d4d2421a4a3b8c0e0ac07c50f1875c8af21ae8bebe140e0e00c4da7d20bb144381609376f828e0744a1809c1528cb6204d26dc65b262b160b1d82c158a64f6bd4ec015191c83a0a67012e2ae820791274f950c0612078d385310807a78681f5d0da4e1e1aa9a511f7ea312a7c1f2b2e9acde68b39ba80c1575a6db6913d81c8e5a4419c12784bbd0237674fdd0cc027900: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:19:03,544 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:50068 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50147 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50217 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50276 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50336 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50578 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+2025-11-30 00:20:03,545 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:20:03,564 - masumi.payment - INFO - Status check completed, found 5 payments
+2025-11-30 00:20:03,565 - masumi.payment - INFO - Payment 2980e605818c08c0cc119cc6004c404e013320cc05648b4dc75278d01d85482f82e0779175800d9a380066851564fc0e7e793bc56c098e7a20780435899a22f4f1d2c9cb3c3474e13a74c91e74119c42b489d20870796303cf85270ab228be81561be8f060e485290ac28e8780438c0b07c14cee290c0d03828e0f02006ac2a199c08f0c0988838e6d60a7828781464519c0074fe388a98c4a69cb2c0b2e8b078e87cfc64c4d5d678666a38a2983136699cac20f042d0c8121af53490e0e028f078b9b048b0a498d63a3ee066d8c62452c8d991ac1196ad1678ac14ac62e0ace01498ace552f8201c3a0f4b9080e040a2140cc44be06340f4874c00964c9342b5145269b6952d0bca1920161422424781fa9d5465562616028c237d905f03285d0331b095baad122806cf8750e364a9351895833378510a6667b817643245bcecb259261dae6149e15c0663068500646a9356491c3d4d2421a4a3b8c0e0ac07c50f1875c8af21ae8bebe140e0e00c4da7d20bb144381609376f828e0744a1809c1528cb6204d26dc65b262b160b1d82c158a64f6bd4ec015191c83a0a67012e2ae820791274f950c0612078d385310807a78681f5d0da4e1e1aa9a511f7ea312a7c1f2b2e9acde68b39ba80c1575a6db6913d81c8e5a4419c12784bbd0237674fdd0cc027900: onChainState=None, NextAction=WaitingForExternalAction
+2025-11-30 00:20:03,565 - masumi.payment - INFO - Waiting 60 seconds before next status check
+INFO:     202.62.82.52:50758 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50826 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50888 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     46.101.200.95:48199 - "GET /availability HTTP/1.1" 200 OK
+INFO:     202.62.82.52:50949 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51015 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51211 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+2025-11-30 00:21:03,565 - masumi.payment - INFO - Checking payment status for 1 payments
+2025-11-30 00:21:03,584 - masumi.payment - INFO - Status check completed, found 5 payments
+2025-11-30 00:21:03,584 - masumi.payment - INFO - Payment 2980e605818c08c0cc119cc6004c404e013320cc05648b4dc75278d01d85482f82e0779175800d9a380066851564fc0e7e793bc56c098e7a20780435899a22f4f1d2c9cb3c3474e13a74c91e74119c42b489d20870796303cf85270ab228be81561be8f060e485290ac28e8780438c0b07c14cee290c0d03828e0f02006ac2a199c08f0c0988838e6d60a7828781464519c0074fe388a98c4a69cb2c0b2e8b078e87cfc64c4d5d678666a38a2983136699cac20f042d0c8121af53490e0e028f078b9b048b0a498d63a3ee066d8c62452c8d991ac1196ad1678ac14ac62e0ace01498ace552f8201c3a0f4b9080e040a2140cc44be06340f4874c00964c9342b5145269b6952d0bca1920161422424781fa9d5465562616028c237d905f03285d0331b095baad122806cf8750e364a9351895833378510a6667b817643245bcecb259261dae6149e15c0663068500646a9356491c3d4d2421a4a3b8c0e0ac07c50f1875c8af21ae8bebe140e0e00c4da7d20bb144381609376f828e0744a1809c1528cb6204d26dc65b262b160b1d82c158a64f6bd4ec015191c83a0a67012e2ae820791274f950c0612078d385310807a78681f5d0da4e1e1aa9a511f7ea312a7c1f2b2e9acde68b39ba80c1575a6db6913d81c8e5a4419c12784bbd0237674fdd0cc027900: onChainState=FundsLocked, NextAction=WaitingForExternalAction
+2025-11-30 00:21:03,584 - masumi.payment - INFO - Payment 2980e605818c08c0cc119cc6004c404e013320cc05648b4dc75278d01d85482f82e0779175800d9a380066851564fc0e7e793bc56c098e7a20780435899a22f4f1d2c9cb3c3474e13a74c91e74119c42b489d20870796303cf85270ab228be81561be8f060e485290ac28e8780438c0b07c14cee290c0d03828e0f02006ac2a199c08f0c0988838e6d60a7828781464519c0074fe388a98c4a69cb2c0b2e8b078e87cfc64c4d5d678666a38a2983136699cac20f042d0c8121af53490e0e028f078b9b048b0a498d63a3ee066d8c62452c8d991ac1196ad1678ac14ac62e0ace01498ace552f8201c3a0f4b9080e040a2140cc44be06340f4874c00964c9342b5145269b6952d0bca1920161422424781fa9d5465562616028c237d905f03285d0331b095baad122806cf8750e364a9351895833378510a6667b817643245bcecb259261dae6149e15c0663068500646a9356491c3d4d2421a4a3b8c0e0ac07c50f1875c8af21ae8bebe140e0e00c4da7d20bb144381609376f828e0744a1809c1528cb6204d26dc65b262b160b1d82c158a64f6bd4ec015191c83a0a67012e2ae820791274f950c0612078d385310807a78681f5d0da4e1e1aa9a511f7ea312a7c1f2b2e9acde68b39ba80c1575a6db6913d81c8e5a4419c12784bbd0237674fdd0cc027900 completed, removing from tracking
+2025-11-30 00:21:03,584 - masumi.payment - INFO - Calling callback function for payment 2980e605818c08c0cc119cc6004c404e013320cc05648b4dc75278d01d85482f82e0779175800d9a380066851564fc0e7e793bc56c098e7a20780435899a22f4f1d2c9cb3c3474e13a74c91e74119c42b489d20870796303cf85270ab228be81561be8f060e485290ac28e8780438c0b07c14cee290c0d03828e0f02006ac2a199c08f0c0988838e6d60a7828781464519c0074fe388a98c4a69cb2c0b2e8b078e87cfc64c4d5d678666a38a2983136699cac20f042d0c8121af53490e0e028f078b9b048b0a498d63a3ee066d8c62452c8d991ac1196ad1678ac14ac62e0ace01498ace552f8201c3a0f4b9080e040a2140cc44be06340f4874c00964c9342b5145269b6952d0bca1920161422424781fa9d5465562616028c237d905f03285d0331b095baad122806cf8750e364a9351895833378510a6667b817643245bcecb259261dae6149e15c0663068500646a9356491c3d4d2421a4a3b8c0e0ac07c50f1875c8af21ae8bebe140e0e00c4da7d20bb144381609376f828e0744a1809c1528cb6204d26dc65b262b160b1d82c158a64f6bd4ec015191c83a0a67012e2ae820791274f950c0612078d385310807a78681f5d0da4e1e1aa9a511f7ea312a7c1f2b2e9acde68b39ba80c1575a6db6913d81c8e5a4419c12784bbd0237674fdd0cc027900
+2025-11-30 00:21:04,073 - masumi.payment - INFO - Stopping payment status monitoring
+2025-11-30 00:21:04,073 - masumi.payment - INFO - No more payments to monitor, stopping monitoring task
+Error processing payment 2980e605818c08c0cc119cc6004c404e013320cc05648b4dc75278d01d85482f82e0779175800d9a380066851564fc0e7e793bc56c098e7a20780435899a22f4f1d2c9cb3c3474e13a74c91e74119c42b489d20870796303cf85270ab228be81561be8f060e485290ac28e8780438c0b07c14cee290c0d03828e0f02006ac2a199c08f0c0988838e6d60a7828781464519c0074fe388a98c4a69cb2c0b2e8b078e87cfc64c4d5d678666a38a2983136699cac20f042d0c8121af53490e0e028f078b9b048b0a498d63a3ee066d8c62452c8d991ac1196ad1678ac14ac62e0ace01498ace552f8201c3a0f4b9080e040a2140cc44be06340f4874c00964c9342b5145269b6952d0bca1920161422424781fa9d5465562616028c237d905f03285d0331b095baad122806cf8750e364a9351895833378510a6667b817643245bcecb259261dae6149e15c0663068500646a9356491c3d4d2421a4a3b8c0e0ac07c50f1875c8af21ae8bebe140e0e00c4da7d20bb144381609376f828e0744a1809c1528cb6204d26dc65b262b160b1d82c158a64f6bd4ec015191c83a0a67012e2ae820791274f950c0612078d385310807a78681f5d0da4e1e1aa9a511f7ea312a7c1f2b2e9acde68b39ba80c1575a6db6913d81c8e5a4419c12784bbd0237674fdd0cc027900 for job 2e595eb1-265a-4e6c-87b4-1527a336af14: Missing required template variable 'Template variable 'intent' not found in inputs dictionary' in description
+INFO:     202.62.82.52:51363 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51460 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51523 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51591 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51673 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51734 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     202.62.82.52:51998 - "GET /status?job_id=2e595eb1-265a-4e6c-87b4-1527a336af14 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [391576]
