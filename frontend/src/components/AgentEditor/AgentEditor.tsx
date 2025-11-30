@@ -23,6 +23,7 @@ import type { AgentNodeData } from './AgentNode';
 import TriggerNode from './TriggerNode';
 import AgentPalette from './AgentPalette';
 import NodeConfigSidebar from './NodeConfigSidebar';
+import ExecutionLogsSidebar from './ExecutionLogsSidebar';
 import { useToast } from '../../context/ToastContext';
 import {
   createWorkflow,
@@ -32,6 +33,7 @@ import {
   executeWorkflow as executeWorkflowApi,
   type WorkflowNode,
   type WorkflowEdge,
+  type ExecutionResult,
 } from '../../services/api';
 
 // Custom node types
@@ -74,6 +76,8 @@ function AgentEditorCanvas() {
   const [workflowStatus, setWorkflowStatus] = useState<'active' | 'inactive'>('inactive');
   const [isSaving, setIsSaving] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
+  const [showExecutionLogs, setShowExecutionLogs] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -320,9 +324,15 @@ function AgentEditorCanvas() {
       return;
     }
 
+    // Close config sidebar and show execution logs
+    setSelectedNodeId(null);
+    setExecutionResult(null);
+    setShowExecutionLogs(true);
     setIsExecuting(true);
+    
     try {
       const result = await executeWorkflowApi(workflowId);
+      setExecutionResult(result);
       
       if (result.status === 'success') {
         success(
@@ -340,6 +350,16 @@ function AgentEditorCanvas() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to execute workflow';
       error('Execution failed', message);
+      setExecutionResult({
+        executionId: 'error',
+        workflowId: workflowId,
+        workflowName: workflowName,
+        triggerType: 'manual',
+        status: 'failed',
+        nodeResults: [],
+        summary: { totalNodes: 0, successfulNodes: 0, failedNodes: 1 },
+        timing: { startTime: new Date().toISOString(), endTime: new Date().toISOString(), duration: 0 },
+      });
     } finally {
       setIsExecuting(false);
     }
@@ -613,11 +633,23 @@ function AgentEditorCanvas() {
           </ReactFlow>
 
           {/* Node Configuration Sidebar */}
-          <NodeConfigSidebar
-            selectedNode={selectedNode}
-            onClose={() => setSelectedNodeId(null)}
-            onUpdateNode={handleUpdateNode}
-            connectedInputs={connectedInputs}
+          {!showExecutionLogs && (
+            <NodeConfigSidebar
+              selectedNode={selectedNode}
+              onClose={() => setSelectedNodeId(null)}
+              onUpdateNode={handleUpdateNode}
+              connectedInputs={connectedInputs}
+            />
+          )}
+
+          {/* Execution Logs Sidebar */}
+          <ExecutionLogsSidebar
+            isExecuting={isExecuting}
+            executionResult={executionResult}
+            onClose={() => {
+              setShowExecutionLogs(false);
+              setExecutionResult(null);
+            }}
           />
         </div>
       </div>
